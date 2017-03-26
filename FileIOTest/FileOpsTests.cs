@@ -1,6 +1,4 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FileIO;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FileIO.Tests
 {
