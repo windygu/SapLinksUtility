@@ -5,7 +5,7 @@ namespace FileIO
     /// <summary>
     /// Exception thrown when an encoded text file is found to be corrupted
     /// </summary>
-    internal class CorruptedFileException : ApplicationException
+    public class CorruptedFileException : ApplicationException
     {
         private const string _fileSystemMessage = "Corrupted file exception";
         private string _msg = null;

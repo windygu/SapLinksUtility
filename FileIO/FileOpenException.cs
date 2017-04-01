@@ -5,7 +5,7 @@ namespace FileIO
     /// <summary>
     /// Exception thrown when issues are detected opening a file
     /// </summary>
-    internal class FileOpenException : ApplicationException
+    public class FileOpenException : ApplicationException
     {
         private const string _fileOpenMessage = "File open exception";
         private string _msg = null;

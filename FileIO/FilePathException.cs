@@ -5,7 +5,7 @@ namespace FileIO
     /// <summary>
     /// Exception thrown for various file path issues
     /// </summary>
-    internal class FilePathException : ApplicationException
+    public class FilePathException : ApplicationException
     {
         private const string _filePathMessage = "File path exception";
         private string _msg = null;

@@ -5,7 +5,7 @@ namespace FileIO
     /// <summary>
     /// Exception thrown when plain text character value is larger then 0x00ff
     /// </summary>
-    internal class InvalidCharacterException : ApplicationException
+    public class InvalidCharacterException : ApplicationException
     {
         private const string _fileSystemMessage = "Invalid character exception";
         private string _msg = null;

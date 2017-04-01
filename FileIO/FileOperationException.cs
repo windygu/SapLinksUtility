@@ -5,7 +5,7 @@ namespace FileIO
     /// <summary>
     /// Exception thrown when errors occur coying, moving, or renaming a file
     /// </summary>
-    internal class FileOperationException : ApplicationException
+    public class FileOperationException : ApplicationException
     {
         private const string _fileMovementMessage = "File operation exception";
         private string _msg = null;
