@@ -87,22 +87,24 @@ namespace FileIO
             // it is.
             if (State == FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File already open");
-                foe.FilePath = DirectoryPath;
-                foe.FileName = FileName;
+                FileOpenException foe = new FileOpenException("File already open")
+                {
+                    FilePath = DirectoryPath,
+                    FileName = FileName
+                };
                 throw foe;
             }
             // Obtain the absolute file path. Throw an exception if the path is
             // invalid.
-            string absoluteFilePath = ParseFilePath(filePath);
+            ParseFilePath(filePath);
             // Throw an exception if the file doesn't exist.
-            FileOps.FileMustExist(absoluteFilePath);
+            FileOps.FileMustExist(FilePath);
             State = FileState.OPEN;
             Mode = FileMode.READ;
             // Read the contents of the file into the _fileData collection
             try
             {
-                using (StreamReader sr = new StreamReader(absoluteFilePath))
+                using (StreamReader sr = new StreamReader(FilePath))
                 {
                     while (sr.Peek() >= 0) // Check to see if we've reached the end of the file
                     {
@@ -116,9 +118,11 @@ namespace FileIO
             catch (Exception e)
             {
                 string msg = String.Format("Error reading line {0} from file", Count + 1);
-                FileIOException fie = new FileIOException(msg, e);
-                fie.FilePath = DirectoryPath;
-                fie.FileName = FileName;
+                FileIOException fie = new FileIOException(msg, e)
+                {
+                    FilePath = DirectoryPath,
+                    FileName = FileName
+                };
                 throw fie;
             }
         }
@@ -141,10 +145,12 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                if (filePath == null) filePath = "NULL";
-                FileIOException fie = new FileIOException("Unable to write file to disk", e);
-                fie.FilePath = DirectoryPath;
-                fie.FileName = FileName;
+                if (filePath == null) filePath = NULL;
+                FileIOException fie = new FileIOException("Unable to write file to disk", e)
+                {
+                    FilePath = DirectoryPath,
+                    FileName = FileName
+                };
                 throw fie;
             }
         }
@@ -198,9 +204,11 @@ namespace FileIO
                 if ((x & 0xff00) > 0)
                 {
                     string msg = String.Format("Unsupported Unicode character found: '{0}' ({1:X4})", x, (ushort)x);
-                    InvalidCharacterException ice = new InvalidCharacterException(msg);
-                    ice.FilePath = DirectoryPath;
-                    ice.FileName = FileName;
+                    InvalidCharacterException ice = new InvalidCharacterException(msg)
+                    {
+                        FilePath = DirectoryPath,
+                        FileName = FileName
+                    };
                     throw ice;
                 }
                 ushort encoded = 0;  // holds the encoded character as a ushort
@@ -292,9 +300,11 @@ namespace FileIO
                     // is not zero, then two or more bits are corrupted. Throw an exception.
                     if (p0 != 0)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted");
-                        cfe.FilePath = DirectoryPath;
-                        cfe.FileName = FileName;
+                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        {
+                            FilePath = DirectoryPath,
+                            FileName = FileName
+                        };
                         throw cfe;
                     }
                 }
@@ -304,9 +314,11 @@ namespace FileIO
                     // bit is zero, then two or more bits are corrupted. Throw an exception.
                     if (p0 == 0)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted");
-                        cfe.FilePath = DirectoryPath;
-                        cfe.FileName = FileName;
+                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        {
+                            FilePath = DirectoryPath,
+                            FileName = FileName
+                        };
                         throw cfe;
                     }
                     // There are twelve possible bit positions in the encoded text character containing the data bits
@@ -314,9 +326,11 @@ namespace FileIO
                     // points to anything higher than bit position 12, then throw an exception.
                     else if (badBit > 12)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted");
-                        cfe.FilePath = DirectoryPath;
-                        cfe.FileName = FileName;
+                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        {
+                            FilePath = DirectoryPath,
+                            FileName = FileName
+                        };
                         throw cfe;
                     }
                     // If we reach this point, then there is one bit in error, and it is one of the 8 data bits from
@@ -338,9 +352,9 @@ namespace FileIO
         public override string ToString()
         {
             string directoryPath = DirectoryPath;
-            if (directoryPath == null) directoryPath = "NULL";
+            if (directoryPath == null) directoryPath = NULL;
             string fileName = FileName;
-            if (fileName == null) fileName = "NULL";
+            if (fileName == null) fileName = NULL;
             string fileState = State.ToString();
             string fileMode = Mode.ToString();
             return String.Format(

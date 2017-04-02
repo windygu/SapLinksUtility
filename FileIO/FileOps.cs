@@ -26,9 +26,11 @@ namespace FileIO
             {
                 if (filePath1 == null) filePath1 = "NULL";
                 if (filePath2 == null) filePath2 = "NULL";
-                FilePathException fpe = new FilePathException("Unable to construct full file path", e);
-                fpe.FilePath = filePath1;
-                fpe.FileName = filePath2;
+                FilePathException fpe = new FilePathException("Unable to construct full file path", e)
+                {
+                    FilePath = filePath1,
+                    FileName = filePath2
+                };
                 throw fpe;
             }
             return combinedPath;
@@ -49,9 +51,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FilePathException fpe = new FilePathException("Unable to parse file path", e);
-                fpe.FilePath = filePath;
-                fpe.FileName = "n/a";
+                FilePathException fpe = new FilePathException("Unable to parse file path", e)
+                {
+                    FilePath = filePath,
+                    FileName = "n/a"
+                };
                 throw fpe;
             }
             return absoluteFilePath;
@@ -67,9 +71,11 @@ namespace FileIO
             if (!File.Exists(filePath))
             {
                 if (filePath == null) filePath = "NULL";
-                FileOpenException foe = new FileOpenException("File doesn't exist");
-                foe.FilePath = filePath;
-                foe.FileName = "n/a";
+                FileOpenException foe = new FileOpenException("File doesn't exist")
+                {
+                    FilePath = filePath,
+                    FileName = "n/a"
+                };
                 throw foe;
             }
         }
@@ -83,9 +89,11 @@ namespace FileIO
         {
             if (File.Exists(filePath))
             {
-                FileOpenException foe = new FileOpenException("File already exists");
-                foe.FilePath = filePath;
-                foe.FileName = "n/a";
+                FileOpenException foe = new FileOpenException("File already exists")
+                {
+                    FilePath = filePath,
+                    FileName = "n/a"
+                };
                 throw foe;
             }
         }
@@ -153,9 +161,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FileOperationException foe = new FileOperationException("Unable to create file", e);
-                foe.TargetPath = filePath;
-                foe.SourcePath = "n/a";
+                FileOperationException foe = new FileOperationException("Unable to create file", e)
+                {
+                    TargetPath = filePath,
+                    SourcePath = "n/a"
+                };
                 throw foe;
             }
         }
@@ -174,9 +184,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FileOpenException foe = new FileOpenException("Unable to truncate file", e);
-                foe.FilePath = filePath;
-                foe.FileName = "n/a";
+                FileOpenException foe = new FileOpenException("Unable to truncate file", e)
+                {
+                    FilePath = filePath,
+                    FileName = "n/a"
+                };
                 throw foe;
             }
         }
@@ -195,9 +207,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (directoryPath == null) directoryPath = "NULL";
-                FileOperationException foe = new FileOperationException("Unable to create directory", e);
-                foe.TargetPath = directoryPath;
-                foe.SourcePath = "n/a";
+                FileOperationException foe = new FileOperationException("Unable to create directory", e)
+                {
+                    TargetPath = directoryPath,
+                    SourcePath = "n/a"
+                };
                 throw foe;
             }
         }
