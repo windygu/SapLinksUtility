@@ -222,7 +222,7 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                string msg = String.Format("Error reading line {0} from file", Count + 1);
+                string msg = $"Error reading line {Count + 1} from file";
                 FileIOException fie = new FileIOException(msg, e)
                 {
                     FilePath = DirectoryPath,

@@ -17,13 +17,13 @@ namespace FileIO
         }
 
         public FileOperationException(string msg) :
-            base(String.Format("{0}: {1}", _fileMovementMessage, msg))
+            base($"{_fileMovementMessage}: {msg}")
         {
             _msg = msg;
         }
 
         public FileOperationException(string msg, Exception inner) :
-            base(String.Format("{0}: {1}", _fileMovementMessage, msg), inner)
+            base($"{_fileMovementMessage}: {msg}", inner)
         {
             _msg = msg;
         }

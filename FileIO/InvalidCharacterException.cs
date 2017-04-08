@@ -17,13 +17,13 @@ namespace FileIO
         }
 
         public InvalidCharacterException(string msg) :
-            base(String.Format("{0}: {1}", _fileSystemMessage, msg))
+            base($"{_fileSystemMessage}: {msg}")
         {
             _msg = msg;
         }
 
         public InvalidCharacterException(string msg, Exception inner) :
-            base(String.Format("{0}: {1}", _fileSystemMessage, msg), inner)
+            base($"{_fileSystemMessage}: {msg}", inner)
         {
             _msg = msg;
         }

@@ -43,8 +43,8 @@ namespace FileIO.Tests
                 }
                 catch (Exception e)
                 {
-                    string msg = String.Format("CombinePath_ValidPath test failed\nindex={0}\nPart1: {1}" +
-                        "\nPart2: {2}\nResult: {3}\nException: {4}", i, part1, part2, result, e.Message);
+                    string msg = $"CombinePath_ValidPath test failed\nindex={i}\nPart1: {part1}\nPart2: {part2}" +
+                        $"\nResult: {result}\nException: {e.Message}";
                     Assert.Fail(msg);
                 }
             }
@@ -82,8 +82,8 @@ namespace FileIO.Tests
             {
                 return;
             }
-            string msg = String.Format("CombinePath_InvalidPath test failed\n" +
-                "Test index: {0}\nPart1: {1}\nPart2: {2}\nResult: {3}", i, part1, part2, result);
+            string msg = $"CombinePath_InvalidPath test failed\nTest index: {i}\nPart1: {part1}" +
+                $"\nPart2: {part2}\nResult: {result}";
             Assert.Fail(msg);
         }
 
@@ -101,9 +101,9 @@ namespace FileIO.Tests
             }
             catch (Exception e)
             {
-                string msg = String.Format("GetAbsoluteFilePath_ValidPath test failed\nException: {0}" +
-                    "\nCurrent working directory: {1}\nFile path: {2}\nExpected result: {3}" +
-                    "\nActual result: {4}", e.Message, currentPath, dir1, expected, result);
+                string msg = $"GetAbsoluteFilePath_ValidPath test failed\nException: {e.Message}" +
+                    $"\nCurrent working directory: {currentPath}\nFile path: {dir1}\nExpected result: {expected}" +
+                    $"\nActual result: {result}";
                 Assert.Fail(msg);
             }
             Assert.AreEqual(expected, result);
@@ -143,8 +143,8 @@ namespace FileIO.Tests
             {
                 return;
             }
-            string msg = String.Format("GetAbsoluteFilePath_InvalidPath test failed\nTest index: {0}\nPath: {1}" +
-                "\nResult: {2}", i, path, result);
+            string msg = $"GetAbsoluteFilePath_InvalidPath test failed\nTest index: {i}\nPath: {path}" +
+                $"\nResult: {result}";
             Assert.Fail(msg);
         }
     }

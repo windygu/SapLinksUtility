@@ -17,13 +17,13 @@ namespace FileIO
         }
 
         public FileOpenException(string msg) :
-            base(String.Format("{0}: {1}", _fileOpenMessage, msg))
+            base($"{_fileOpenMessage}: {msg}")
         {
             _msg = msg;
         }
 
         public FileOpenException(string msg, Exception inner) :
-            base(String.Format("{0}: {1}", _fileOpenMessage, msg), inner)
+            base($"{_fileOpenMessage}: {msg}", inner)
         {
             _msg = msg;
         }

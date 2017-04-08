@@ -17,13 +17,13 @@ namespace FileIO
         }
 
         public FilePathException(string msg) :
-            base(String.Format("{0}: {1}", _filePathMessage, msg))
+            base($"{_filePathMessage}: {msg}")
         {
             _msg = msg;
         }
 
         public FilePathException(string msg, Exception inner) :
-            base(String.Format("{0}: {1}", _filePathMessage, msg), inner)
+            base($"{_filePathMessage}: {msg}", inner)
         {
             _msg = msg;
         }

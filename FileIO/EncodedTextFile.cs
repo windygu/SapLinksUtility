@@ -35,14 +35,14 @@ namespace FileIO
         // Column 5 - P8 parity value for this bit position
         private static readonly ushort[,] codeTable = new ushort[,]
         {
-            { 0x0080, 0x0200, 1, 2, 0, 0 },
-            { 0x0040, 0x0080, 1, 0, 4, 0 },
-            { 0x0020, 0x0040, 0, 2, 4, 0 },
-            { 0x0010, 0x0020, 1, 2, 4, 0 },
-            { 0x0008, 0x0008, 1, 0, 0, 8 },
-            { 0x0004, 0x0004, 0, 2, 0, 8 },
-            { 0x0002, 0x0002, 1, 2, 0, 8 },
-            { 0x0001, 0x0001, 0, 0, 4, 8 }
+            { 0b1000_0000, 0b0010_0000_0000, 1, 2, 0, 0 },
+            { 0b0100_0000, 0b0000_1000_0000, 1, 0, 4, 0 },
+            { 0b0010_0000, 0b0000_0100_0000, 0, 2, 4, 0 },
+            { 0b0001_0000, 0b0000_0010_0000, 1, 2, 4, 0 },
+            { 0b0000_1000, 0b0000_0000_1000, 1, 0, 0, 8 },
+            { 0b0000_0100, 0b0000_0000_0100, 0, 2, 0, 8 },
+            { 0b0000_0010, 0b0000_0000_0010, 1, 2, 0, 8 },
+            { 0b0000_0001, 0b0000_0000_0001, 0, 0, 4, 8 }
         };
 
         // The parityTable gives the bit positions for each of the parity bits.
@@ -50,14 +50,39 @@ namespace FileIO
         // represent parity bits P0, P1, P2, P4, and P8, in that order.
         private static readonly ushort[] parityTable = new ushort[]
         {
-            0, 0x1000, 0x0800, 0x0400, 0x0100, 0x0010
+            0,
+            0b0001_0000_0000_0000, // P0 - overall parity bit
+            0b0000_1000_0000_0000, // P1 - parity bit 1
+            0b0000_0100_0000_0000, // P2 - parity bit 2
+            0b0000_0001_0000_0000, // P4 - Parity bit 4
+            0b0000_0000_0001_0000  // P8 - parity bit 8
         };
 
         // The flipBit array is used for flipping the error bit in the decoded
         // text character when a single bit error is detected.
+        //
+        //                 --+----+----
+        //                 12 4   8      parity bit positions
+        //                   a bcd efgh  encoded text bit positions
+        //                 --+----+----
+        //                     abcdefgh  plain text bit positions
+        //                 --+----+----
+        // bit position    1 1    0   0
+        //                 2 0    5   1
         private static readonly ushort[] flipBit = new ushort[]
         {
-            0, 0, 0x0080, 0, 0x0040, 0x0020, 0x0010, 0, 0x0008, 0x0004, 0x0002, 0x0001
+            0,              //    P1 parity bit
+            0,              //    P2 parity bit
+            0b1000_0000,    // a) encoded bit 10 / plain text bit 8
+            0,              //    P4 parity bit
+            0b0100_0000,    // b) encoded bit 8 / plain text bit 7
+            0b0010_0000,    // c) encoded bit 7 / plain text bit 6
+            0b0001_0000,    // d) encoded bit 6 / plain text bit 5
+            0,              //    P8 parity bit
+            0b0000_1000,    // e) encoded bit 4 / plain text bit 4
+            0b0000_0100,    // f) encoded bit 3 / plain text bit 3
+            0b0000_0010,    // g) encoded bit 2 / plain text bit 2
+            0b0000_0001     // h) encoded bit 1 / plain text bit 1
         };
 
         /// <summary>
@@ -117,7 +142,7 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                string msg = String.Format("Error reading line {0} from file", Count + 1);
+                string msg = $"Error reading line {this.Count + 1} from file";
                 FileIOException fie = new FileIOException(msg, e)
                 {
                     FilePath = DirectoryPath,
@@ -203,7 +228,7 @@ namespace FileIO
                 // character contains anything other than zero
                 if ((x & 0xff00) > 0)
                 {
-                    string msg = String.Format("Unsupported Unicode character found: '{0}' ({1:X4})", x, (ushort)x);
+                    string msg = $"Unsupported Unicode character found: '{x}' ({(ushort)x:X4})";
                     InvalidCharacterException ice = new InvalidCharacterException(msg)
                     {
                         FilePath = DirectoryPath,
