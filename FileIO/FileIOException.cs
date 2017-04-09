@@ -7,10 +7,16 @@ namespace FileIO
     /// </summary>
     public class FileIOException : ApplicationException
     {
+        #region Private Fields
+
         private const string _fileSystemMessage = "File I/O exception";
-        private string _msg = null;
-        private string _filePath = null;
         private string _fileName = null;
+        private string _filePath = null;
+        private string _msg = null;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public FileIOException() : base(_fileSystemMessage)
         {
@@ -28,11 +34,20 @@ namespace FileIO
             _msg = msg;
         }
 
-        public override string Message
+        #endregion Public Constructors
+
+        #region Public Properties
+
+        public string FileName
         {
             get
             {
-                return _msg;
+                if (_fileName == null) return "NULL";
+                else return _fileName;
+            }
+            set
+            {
+                _fileName = value;
             }
         }
 
@@ -49,17 +64,14 @@ namespace FileIO
             }
         }
 
-        public string FileName
+        public override string Message
         {
             get
             {
-                if (_fileName == null) return "NULL";
-                else return _fileName;
-            }
-            set
-            {
-                _fileName = value;
+                return _msg;
             }
         }
+
+        #endregion Public Properties
     }
 }

@@ -7,10 +7,16 @@ namespace FileIO
     /// </summary>
     public class FileOperationException : ApplicationException
     {
+        #region Private Fields
+
         private const string _fileMovementMessage = "File operation exception";
         private string _msg = null;
         private string _source = null;
         private string _target = null;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         public FileOperationException() : base(_fileMovementMessage)
         {
@@ -27,6 +33,10 @@ namespace FileIO
         {
             _msg = msg;
         }
+
+        #endregion Public Constructors
+
+        #region Public Properties
 
         public override string Message
         {
@@ -59,5 +69,7 @@ namespace FileIO
                 _target = value;
             }
         }
+
+        #endregion Public Properties
     }
 }
