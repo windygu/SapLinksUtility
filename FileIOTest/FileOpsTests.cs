@@ -7,7 +7,9 @@ namespace FileIO.Tests
     [TestClass]
     public class FileOpsTests
     {
-        private string[,] combinePath_ValidPath_data =
+        private PrivateType pt = new PrivateType(typeof(FileOps));
+
+        private readonly string[,] combinePath_ValidPath_data =
         {
             { @"\dir(1\dir)2", @"dir3\testfile.txt", @"\dir(1\dir)2\dir3\testfile.txt" },
             { @"\dir1\dir2\", @"dir3\$testfile.txt", @"\dir1\dir2\dir3\$testfile.txt" },
@@ -50,7 +52,7 @@ namespace FileIO.Tests
             }
         }
 
-        private string[,] combinePath_InvalidPath_data =
+        private readonly string[,] combinePath_InvalidPath_data =
         {
             { null, @"\\dir)2" },
             { @"dir""1", @"dir2" },
@@ -109,7 +111,7 @@ namespace FileIO.Tests
             Assert.AreEqual(expected, result);
         }
 
-        private string[] getAbsoluteFilePath_InvalidPath_data =
+        private readonly string[] getAbsoluteFilePath_InvalidPath_data =
         {
             @"this\is\a\te:st",
             null,
@@ -146,6 +148,212 @@ namespace FileIO.Tests
             string msg = $"GetAbsoluteFilePath_InvalidPath test failed\nTest index: {i}\nPath: {path}" +
                 $"\nResult: {result}";
             Assert.Fail(msg);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void FileMustExist_fileExists()
+        {
+            string filePath = null;
+            try
+            {
+                filePath = Path.GetFullPath(@"TestFile.junk");
+                StreamWriter sw = new StreamWriter(File.Create(filePath));
+                sw.Close();
+                sw.Dispose();
+            }
+            catch (Exception e)
+            {
+                string msg = $"FileMustExist_fileExists test failed\nUnable to create test file: {filePath}" +
+                    $"\n{e.Message}";
+                Assert.Fail(msg);
+            }
+            FileOps.FileMustExist(filePath);
+            File.Delete(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void FileMustExist_fileDoesNotExist()
+        {
+            string filePath = null;
+            try
+            {
+                filePath = Path.GetFullPath(@"NonExistantFile.junk");
+            }
+            catch (Exception e)
+            {
+                string msg = $"FileMustExist_fileDoesNotExst test failed\nUnable to get full file path: {filePath}" +
+                    $"\n{e.Message}";
+                Assert.Fail(msg);
+            }
+            try
+            {
+                FileOps.FileMustExist(filePath);
+            }
+            catch (FileOpenException)
+            {
+                return;
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void FileMustNotExist_fileDoesNotExist()
+        {
+            string filePath = null;
+            try
+            {
+                filePath = Path.GetFullPath(@"NonExistantFile.junk");
+            }
+            catch (Exception e)
+            {
+                string msg = $"FileMustNotExist_fileDoesNotExst test failed" +
+                    $"\nUnable to get full file path: {filePath}\n{e.Message}";
+                Assert.Fail(msg);
+            }
+            FileOps.FileMustNotExist(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void FileMustNotExist_fileExists()
+        {
+            string filePath = null;
+            try
+            {
+                filePath = Path.GetFullPath(@"TestFile.junk");
+                StreamWriter sw = new StreamWriter(File.Create(filePath));
+                sw.Close();
+                sw.Dispose();
+            }
+            catch (Exception e)
+            {
+                string msg = $"FileMustNotExist_fileExists test failed\nUnable to create test file: {filePath}" +
+                    $"\n{e.Message}";
+                Assert.Fail(msg);
+            }
+            try
+            {
+                FileOps.FileMustNotExist(filePath);
+            }
+            catch { }
+            File.Delete(filePath);
+        }
+
+        private readonly string[] findEndOfDirectoryPath_pathData =
+        {
+            @"C:\This\is\a\test",
+            @"\test",
+            @"\test\test",
+            @"test\",
+            @"test",
+            null,
+            ""
+        };
+
+        private readonly int[] findEndOfDirectoryPath_expectedData =
+        {
+            12, 0, 5, 4, -1, -1, -1
+        };
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void FindEndOfDirectoryPath_valid()
+        {
+            for (int i = 0; i < findEndOfDirectoryPath_pathData.Length; i++)
+            {
+                int result = FindEndOfDirectoryPath_valid_test(findEndOfDirectoryPath_pathData[i]);
+                Assert.AreEqual(findEndOfDirectoryPath_expectedData[i], result);
+            }
+        }
+
+        private int FindEndOfDirectoryPath_valid_test(string filePath)
+        {
+            return Convert.ToInt32(pt.InvokeStatic("FindEndOfDirectoryPath", filePath));
+        }
+
+        private readonly string[,] pathData =
+        {
+            { @"C:\this\is\a\test", @"C:\this\is\a", "test" },
+            { @"test\junk.file", "test", "junk.file" },
+            { "test.file", null, "test.file" },
+            { @"\has\no\filename\", @"\has\no\filename", null },
+            { null, null, null },
+            { "", null, null }
+        };
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void GetDirectoryPath_valid()
+        {
+            for (int i = 0; i < pathData.GetLength(0); i++)
+            {
+                string result = GetDirectoryPath_test(pathData[i, 0]);
+                Assert.AreEqual(pathData[i, 1], result);
+            }
+        }
+
+        private string GetDirectoryPath_test(string filePath)
+        {
+            return FileOps.GetDirectoryPath(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void GetFileName_valid()
+        {
+            for (int i = 0; i < pathData.GetLength(0); i++)
+            {
+                string result = GetFileName_test(pathData[i, 0]);
+                Assert.AreEqual(pathData[i, 2], result);
+            }
+        }
+
+        private string GetFileName_test(string filePath)
+        {
+            return FileOps.GetFileName(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void CreateFile_valid()
+        {
+            string filePath = Directory.GetCurrentDirectory() + @"\create.file";
+            if (File.Exists(filePath)) File.Delete(filePath);
+            FileOps.CreateFile(filePath);
+            Assert.IsTrue(File.Exists(filePath));
+            File.Delete(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void CreateFile_nullPath()
+        {
+            string filePath = null;
+            try
+            {
+                FileOps.CreateFile(filePath);
+            }
+            catch (FileOperationException)
+            {
+                return;
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void CreateFile_invalidPath()
+        {
+            string filePath = @"C:\this\path\not\found\create.file";
+            try
+            {
+                FileOps.CreateFile(filePath);
+            }
+            catch (FileOperationException)
+            {
+                return;
+            }
         }
     }
 }

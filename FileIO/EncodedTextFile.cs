@@ -112,12 +112,11 @@ namespace FileIO
             // it is.
             if (State == FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File already open")
+                throw new FileOpenException("File already open")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw foe;
             }
             // Obtain the absolute file path. Throw an exception if the path is
             // invalid.
@@ -143,12 +142,11 @@ namespace FileIO
             catch (Exception e)
             {
                 string msg = $"Error reading line {this.Count + 1} from file";
-                FileIOException fie = new FileIOException(msg, e)
+                throw new FileIOException(msg, e)
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fie;
             }
         }
 
@@ -171,12 +169,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = NULL;
-                FileIOException fie = new FileIOException("Unable to write file to disk", e)
+                throw new FileIOException("Unable to write file to disk", e)
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fie;
             }
         }
 
@@ -229,12 +226,11 @@ namespace FileIO
                 if ((x & 0xff00) > 0)
                 {
                     string msg = $"Unsupported Unicode character found: '{x}' ({(ushort)x:X4})";
-                    InvalidCharacterException ice = new InvalidCharacterException(msg)
+                    throw new InvalidCharacterException(msg)
                     {
                         FilePath = DirectoryPath,
                         FileName = FileName
                     };
-                    throw ice;
                 }
                 ushort encoded = 0;  // holds the encoded character as a ushort
                 // Initialize the parity bits to zero
@@ -325,12 +321,11 @@ namespace FileIO
                     // is not zero, then two or more bits are corrupted. Throw an exception.
                     if (p0 != 0)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted")
                         {
                             FilePath = DirectoryPath,
                             FileName = FileName
                         };
-                        throw cfe;
                     }
                 }
                 else if (badBit > 0)
@@ -339,24 +334,22 @@ namespace FileIO
                     // bit is zero, then two or more bits are corrupted. Throw an exception.
                     if (p0 == 0)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted")
                         {
                             FilePath = DirectoryPath,
                             FileName = FileName
                         };
-                        throw cfe;
                     }
                     // There are twelve possible bit positions in the encoded text character containing the data bits
                     // from the original source character and the four parity bits p1, p2, p4, and p8. If the badBit
                     // points to anything higher than bit position 12, then throw an exception.
                     else if (badBit > 12)
                     {
-                        CorruptedFileException cfe = new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted")
                         {
                             FilePath = DirectoryPath,
                             FileName = FileName
                         };
-                        throw cfe;
                     }
                     // If we reach this point, then there is one bit in error, and it is one of the 8 data bits from
                     // the original text character. Flip the bit that is in error to correct it.

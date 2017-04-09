@@ -26,12 +26,11 @@ namespace FileIO
             {
                 if (filePath1 == null) filePath1 = "NULL";
                 if (filePath2 == null) filePath2 = "NULL";
-                FilePathException fpe = new FilePathException("Unable to construct full file path", e)
+                throw new FilePathException("Unable to construct full file path", e)
                 {
                     FilePath = filePath1,
                     FileName = filePath2
                 };
-                throw fpe;
             }
             return combinedPath;
         }
@@ -51,12 +50,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FilePathException fpe = new FilePathException("Unable to parse file path", e)
+                throw new FilePathException("Unable to parse file path", e)
                 {
                     FilePath = filePath,
                     FileName = "n/a"
                 };
-                throw fpe;
             }
             return absoluteFilePath;
         }
@@ -71,12 +69,11 @@ namespace FileIO
             if (!File.Exists(filePath))
             {
                 if (filePath == null) filePath = "NULL";
-                FileOpenException foe = new FileOpenException("File doesn't exist")
+                throw new FileOpenException("File doesn't exist")
                 {
                     FilePath = filePath,
                     FileName = "n/a"
                 };
-                throw foe;
             }
         }
 
@@ -89,12 +86,11 @@ namespace FileIO
         {
             if (File.Exists(filePath))
             {
-                FileOpenException foe = new FileOpenException("File already exists")
+                throw new FileOpenException("File already exists")
                 {
                     FilePath = filePath,
                     FileName = "n/a"
                 };
-                throw foe;
             }
         }
 
@@ -108,15 +104,21 @@ namespace FileIO
         /// directory separator character</returns>
         private static int FindEndOfDirectoryPath(string filePath)
         {
-            int start = -1;
+            if (filePath == null) return -1;
+            int start = 0;
             int index = 0;
             while (start < filePath.Length && index > -1)
             {
                 index = filePath.IndexOf(Path.DirectorySeparatorChar, start);
-                if (index == -1) break;
+                if (index < 0) break;
                 start = index + 1;
             }
-            if (start < 1 || start >= filePath.Length) return -1;
+            // The only way the start variable can be equal to zero at this
+            // point is if there weren't any directory separate characters
+            // found in the path string. In this case, return zero.
+            // Otherwise, return the zero-based index of the last directory
+            // separator character.
+            if (start == 0) return -1;
             else return start - 1;
         }
 
@@ -129,8 +131,9 @@ namespace FileIO
         /// <returns>Returns the directory path as a string object</returns>
         public static string GetDirectoryPath(string filePath)
         {
+            if (filePath == null) return null;
             int i = FindEndOfDirectoryPath(filePath);
-            if (i < 0) return null;
+            if (i <= 0) return null;
             else return filePath.Substring(0, i);
         }
 
@@ -142,8 +145,10 @@ namespace FileIO
         /// <returns>Returns the file name as a string object</returns>
         public static string GetFileName(string filePath)
         {
+            if (filePath == null) return null;
             int i = FindEndOfDirectoryPath(filePath);
             if (i >= filePath.Length - 1) return null;
+            else if (i < 0) return filePath;
             else return filePath.Substring(i + 1);
         }
 
@@ -161,12 +166,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FileOperationException foe = new FileOperationException("Unable to create file", e)
+                throw new FileOperationException("Unable to create file", e)
                 {
                     TargetPath = filePath,
                     SourcePath = "n/a"
                 };
-                throw foe;
             }
         }
 
@@ -184,12 +188,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (filePath == null) filePath = "NULL";
-                FileOpenException foe = new FileOpenException("Unable to truncate file", e)
+                throw new FileOpenException("Unable to truncate file", e)
                 {
                     FilePath = filePath,
                     FileName = "n/a"
                 };
-                throw foe;
             }
         }
 
@@ -207,12 +210,11 @@ namespace FileIO
             catch (Exception e)
             {
                 if (directoryPath == null) directoryPath = "NULL";
-                FileOperationException foe = new FileOperationException("Unable to create directory", e)
+                throw new FileOperationException("Unable to create directory", e)
                 {
                     TargetPath = directoryPath,
                     SourcePath = "n/a"
                 };
-                throw foe;
             }
         }
 

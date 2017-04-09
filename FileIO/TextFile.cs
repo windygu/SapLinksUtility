@@ -193,12 +193,11 @@ namespace FileIO
             // it is.
             if (State == FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File already open")
+                throw new FileOpenException("File already open")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw foe;
             }
             // Obtain the absolute file path. Throw an exception if the path is
             // invalid.
@@ -223,12 +222,11 @@ namespace FileIO
             catch (Exception e)
             {
                 string msg = $"Error reading line {Count + 1} from file";
-                FileIOException fie = new FileIOException(msg, e)
+                throw new FileIOException(msg, e)
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fie;
             }
         }
 
@@ -256,12 +254,11 @@ namespace FileIO
             // it is.
             if (State == FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File already open")
+                throw new FileOpenException("File already open")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw foe;
             }
             // Obtain the absolute file path.
             ParseFilePath(filePath);
@@ -297,12 +294,11 @@ namespace FileIO
             // it is.
             if (State == FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File already open")
+                throw new FileOpenException("File already open")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw foe;
             }
             // Obtain the absolute file path.
             ParseFilePath(filePath);
@@ -382,12 +378,11 @@ namespace FileIO
         {
             if (State != FileState.OPEN)
             {
-                FileIOException fie = new FileIOException("Can't save unopened file")
+                throw new FileIOException("Can't save unopened file")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fie;
             }
             if (Mode != FileMode.WRITE)
             {
@@ -409,12 +404,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileIOException fie = new FileIOException("Unable to write file to disk", e)
+                throw new FileIOException("Unable to write file to disk", e)
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fie;
             }
         }
 
@@ -434,23 +428,21 @@ namespace FileIO
                 if (State == FileState.OPEN) eFileName = FileName;
                 string eFilePath = EMPTY;
                 if (directoryPath == null) eFilePath = NULL;
-                FilePathException fpe = new FilePathException("Target path is missing")
+                throw new FilePathException("Target path is missing")
                 {
                     FileName = eFileName,
                     FilePath = eFilePath
                 };
-                throw fpe;
             }
             // Verify that the target file path doesn't contain any invalid
             // characters
             if (!FileOps.ValidDirectoryPath(directoryPath))
             {
-                FilePathException fpe = new FilePathException("Target file path contains invalid characters")
+                throw new FilePathException("Target file path contains invalid characters")
                 {
                     FilePath = directoryPath,
                     FileName = NA
                 };
-                throw fpe;
             }
             // Get the full target file path
             string targetPath;
@@ -462,12 +454,11 @@ namespace FileIO
             {
                 string eFileName = NA;
                 if (State == FileState.OPEN) eFileName = FileName;
-                FilePathException fpe = new FilePathException("Invalid target file path", e)
+                throw new FilePathException("Invalid target file path", e)
                 {
                     FileName = eFileName,
                     FilePath = directoryPath
                 };
-                throw fpe;
             }
             // Verify that the target directory exists. Create the directory if
             // it doesn't exist.
@@ -481,12 +472,11 @@ namespace FileIO
                 {
                     string eTargetPath = targetPath;
                     if (targetPath == null) eTargetPath = NULL;
-                    FileOperationException foe = new FileOperationException("Unable to create target directory", e)
+                    throw new FileOperationException("Unable to create target directory", e)
                     {
                         TargetPath = eTargetPath,
                         SourcePath = NA
                     };
-                    throw foe;
                 }
             }
             return targetPath;
@@ -503,12 +493,11 @@ namespace FileIO
             // Verify that the file is open
             if (State != FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File not open")
+                throw new FileOpenException("File not open")
                 {
                     FileName = FileName,
                     FilePath = directoryPath
                 };
-                throw foe;
             }
             // Create the full target file path
             string fullFilePath;
@@ -520,12 +509,11 @@ namespace FileIO
             {
                 string eFilePath = targetPath;
                 if (targetPath == null) eFilePath = NULL;
-                FilePathException fpe = new FilePathException("Unable to determine full target file path", e)
+                throw new FilePathException("Unable to determine full target file path", e)
                 {
                     FilePath = eFilePath,
                     FileName = FileName
                 };
-                throw fpe;
             }
             // If the target path matches the source path, return without doing
             // anything
@@ -537,12 +525,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOpenException foe = new FileOpenException("Target file already exists", e)
+                throw new FileOpenException("Target file already exists", e)
                 {
                     FileName = FileName,
                     FilePath = targetPath
                 };
-                throw foe;
             }
             // First copy the file to the target path
             try
@@ -551,12 +538,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOperationException foe = new FileOperationException("Error moving file to target location", e)
+                throw new FileOperationException("Error moving file to target location", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = fullFilePath
                 };
-                throw foe;
             }
             // Delete the file from the source location if the copy operation
             // was successful
@@ -566,12 +552,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOperationException foe = new FileOperationException("Error removing file from source location", e)
+                throw new FileOperationException("Error removing file from source location", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = targetPath
                 };
-                throw foe;
             }
             DirectoryPath = targetPath;
         }
@@ -587,12 +572,11 @@ namespace FileIO
             // Verify that the file is open
             if (State != FileState.OPEN)
             {
-                FileOpenException foe = new FileOpenException("File not open")
+                throw new FileOpenException("File not open")
                 {
                     FileName = FileName,
                     FilePath = DirectoryPath
                 };
-                throw foe;
             }
             // Create the full target file path
             string fullFilePath;
@@ -604,22 +588,20 @@ namespace FileIO
             {
                 string eFilePath = targetPath;
                 if (targetPath == null) eFilePath = NULL;
-                FilePathException fpe = new FilePathException("Unable to determine full target file path", e)
+                throw new FilePathException("Unable to determine full target file path", e)
                 {
                     FilePath = eFilePath,
                     FileName = FileName
                 };
-                throw fpe;
             }
             // The target file path must not match the source file path
             if (fullFilePath == FilePath)
             {
-                FileOperationException foe = new FileOperationException("Source and target are the same")
+                throw new FileOperationException("Source and target are the same")
                 {
                     SourcePath = FilePath,
                     TargetPath = fullFilePath
                 };
-                throw foe;
             }
             // The target file must not already exist
             try
@@ -628,12 +610,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOpenException foe = new FileOpenException("Target file already exists", e)
+                throw new FileOpenException("Target file already exists", e)
                 {
                     FileName = FileName,
                     FilePath = targetPath
                 };
-                throw foe;
             }
             // Copy the file to the target path
             try
@@ -642,12 +623,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOperationException foe = new FileOperationException("Error moving file to target location", e)
+                throw new FileOperationException("Error moving file to target location", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = fullFilePath
                 };
-                throw foe;
             }
         }
 
@@ -662,23 +642,21 @@ namespace FileIO
             {
                 string eFileName = EMPTY;
                 if (fileName == null) eFileName = NULL;
-                FilePathException fpe = new FilePathException("Missing file name")
+                throw new FilePathException("Missing file name")
                 {
                     FilePath = DirectoryPath,
                     FileName = eFileName
                 };
-                throw fpe;
             }
             // Verify that the target file name is valid
             if (fileName.IndexOf(Path.DirectorySeparatorChar) >= 0 ||
                 !FileOps.ValidFileName(fileName))
             {
-                FilePathException fpe = new FilePathException("Target file name contains invalid characters")
+                throw new FilePathException("Target file name contains invalid characters")
                 {
                     FilePath = DirectoryPath,
                     FileName = fileName
                 };
-                throw fpe;
             }
             // Verify that the target file name doesn't already exist
             string targetPath = Path.Combine(DirectoryPath, fileName);
@@ -688,12 +666,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOperationException foe = new FileOperationException("Target file already exists", e)
+                throw new FileOperationException("Target file already exists", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = targetPath
                 };
-                throw foe;
             }
             // Rename the file
             try
@@ -702,12 +679,11 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                FileOperationException foe = new FileOperationException("Unable to rename file", e)
+                throw new FileOperationException("Unable to rename file", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = targetPath
                 };
-                throw foe;
             }
             FileName = fileName;
         }
@@ -727,24 +703,22 @@ namespace FileIO
             // Throw an exception if the directory path is null
             if (DirectoryPath == NULL)
             {
-                FilePathException fpe = new FilePathException("Directory path can't be null")
+                throw new FilePathException("Directory path can't be null")
                 {
                     FileName = FileName,
                     FilePath = NULL
                 };
-                throw fpe;
             }
             // Parse the file path and extract the file name
             FileName = FileOps.GetFileName(absoluteFilePath);
             // Throw an exception if the file name is null
             if (FileName == NULL)
             {
-                FilePathException fpe = new FilePathException("File name can't be null")
+                throw new FilePathException("File name can't be null")
                 {
                     FilePath = DirectoryPath,
                     FileName = FileName
                 };
-                throw fpe;
             }
         }
 
