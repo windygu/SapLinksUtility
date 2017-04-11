@@ -53,10 +53,7 @@ namespace FileIO
         };
 
         // The flipBit array is used for flipping the error bit in the decoded text character when a
-        // single bit error is detected.
-        //
-        // --+----+---- 12 4 8 parity bit positions a bcd efgh encoded text bit positions
-        // --+----+---- abcdefgh plain text bit positions --+----+---- bit position 1 1 0 0 2 0 5 1
+        // single bit error is detected. (rightmost bit is bit 1)
         private static readonly ushort[] flipBit = new ushort[]
         {
             0,              //    P1 parity bit
@@ -327,24 +324,12 @@ namespace FileIO
         private string EncodeTextString(string line)
         {
             StringBuilder encodedLine = new StringBuilder();
-            // Only the right-most 8 bits of each character in the text string are relevant - 1 2 3 4
-            // 5 6 7 8 9 10 11 12 13 14 15 16 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |- |-
-            // |- |- |- |- |- |- |a |b |c |d |e |f |g |h | +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            //
-            // These bits are placed into the output character like so - 1 2 3 4 5 6 7 8 9 10 11 12
-            // 13 14 15 16 +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+ |0 |0 |0 |P0|P1|P2|a
-            // |P4|b |c |d |P8|e |f |g |h | +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            //
-            // The following bit positions are parity bits. Counting from the left as bit 1 - bit 4 -
-            // P0 - overall parity bit bit 5 - P1 - parity bit 1 bit 6 - P2 - parity bit 2 bit 8 - P4
-            // - parity bit 4 bit 12 - P8 - parity bit 8
-            //
-            // The parity bits are set so that the number of "1" bits in each of the following groups
-            // of bits is an even number - Group 0 = (P0, a, b, c, d, e, f, g, h) Group 1 = (P1, a,
-            // b, d, e, g) Group 2 = (P2, a, c, d, f, g) Group 3 = (P4, b, c, d, h) Group 4 = (P8, e,
-            // f, g, h)
-            //
-            // This is an implementation of the Hamming code Encode each character in the text string
+            // This routine uses a Hamming code to encode a string of text characters. Each character
+            // in the input string is transformed into an encoded character which then gets appended
+            // to the output string. All characters in the input string must be 1-byte characters. If
+            // any non-zero bits are detected in the leftmost byte, then an exception is thrown.
+            // Parity bits P1, P2, P4, and P8 are derived from the Hamming algorithm. Parity bit P0
+            // is an overall parity bit used to detect errors in more than one bit position.
             foreach (char x in line)
             {
                 // Throw an exception if the left-most 8 bits of the current character contains
