@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
+using System.Text;
 
 namespace FileIO.Tests
 {
@@ -130,6 +131,8 @@ namespace FileIO.Tests
             {
                 return;
             }
+            string msg = $"CreateFile_invalidPath failed to throw an exception\nFile path: {filePath}";
+            Assert.Fail(msg);
         }
 
         [TestMethod]
@@ -145,6 +148,8 @@ namespace FileIO.Tests
             {
                 return;
             }
+            string msg = "CreateFile_nullPath failed to throw an exception";
+            Assert.Fail(msg);
         }
 
         [TestMethod]
@@ -181,6 +186,8 @@ namespace FileIO.Tests
             {
                 return;
             }
+            string msg2 = $"FileMustExist_fileDoesNotExist test failed\nFile path: {filePath}";
+            Assert.Fail(msg2);
         }
 
         [TestMethod]
@@ -245,8 +252,18 @@ namespace FileIO.Tests
             {
                 FileOps.FileMustNotExist(filePath);
             }
+            catch (FileOpenException)
+            {
+                File.Delete(filePath);
+                return;
+            }
+            try
+            {
+                File.Delete(filePath);
+            }
             catch { }
-            File.Delete(filePath);
+            string msg2 = $"FileMustNotExist_fileExists test failed\nFile path: {filePath}";
+            Assert.Fail(msg2);
         }
 
         [TestMethod]
@@ -313,6 +330,34 @@ namespace FileIO.Tests
                 string result = GetFileName_test(pathData[i, 0]);
                 Assert.AreEqual(pathData[i, 2], result);
             }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void TruncateFile_valid()
+        {
+            string filePath = Directory.GetCurrentDirectory() + @"\truncate.txt";
+            long fileLength = 9999;
+            try
+            {
+                using (FileStream fs = File.OpenWrite(filePath))
+                {
+                    Byte[] text = new UTF8Encoding(true).GetBytes("This is a test");
+                    fs.Write(text, 0, text.Length);
+                }
+            }
+            catch (Exception e)
+            {
+                string msg = $"TruncateFile_valid test failed\nException: {e.Message}\nFile path: {filePath}";
+                Assert.Fail(msg);
+            }
+            FileOps.TruncateFile(filePath);
+            using (FileStream fs = File.OpenRead(filePath))
+            {
+                fileLength = fs.Length;
+            }
+            Assert.AreEqual(0, fileLength);
+            File.Delete(filePath);
         }
 
         #endregion Public Methods

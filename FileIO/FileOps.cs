@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace FileIO
 {
@@ -199,7 +200,8 @@ namespace FileIO
         {
             try
             {
-                using (FileStream fs = File.OpenWrite(filePath)) { };
+                Byte[] text = new UTF8Encoding(true).GetBytes("");
+                File.WriteAllBytes(filePath, text);
             }
             catch (Exception e)
             {
