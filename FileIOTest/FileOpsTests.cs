@@ -76,6 +76,45 @@ namespace FileIO.Tests
             { "", null, null }
         };
 
+        private readonly string[] validDirectoryPath_invalidData =
+        {
+            "Invalid\"data",
+            "invalid\tdata",
+            "invalid\bdata",
+            "invalid<data",
+            "invalid>data",
+            "invalid\u000ddata",
+            "invalid|data"
+        };
+
+        private readonly string[] validDirectoryPath_validData =
+        {
+            @"C:\valid\data",
+            @"valid#data",
+            @"\valid.data"
+        };
+
+        private readonly string[] validFileName_invalidData =
+        {
+            "Invalid\"data",
+            "invalid\tdata",
+            "invalid\bdata",
+            "invalid<data",
+            "invalid>data",
+            "invalid\u001bdata",
+            "invalid|data",
+            @"invalid\data",
+            "invalid:data"
+        };
+
+        private readonly string[] validFileName_validData =
+        {
+            "valid.name",
+            "valid$name",
+            "valid#name",
+            "valid[name]"
+        };
+
         private PrivateType pt = new PrivateType(typeof(FileOps));
 
         #endregion Private Fields
@@ -358,6 +397,46 @@ namespace FileIO.Tests
             }
             Assert.AreEqual(0, fileLength);
             File.Delete(filePath);
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void ValidDirectoryPath_invalidPaths()
+        {
+            for (int i = 0; i < validDirectoryPath_invalidData.Length; i++)
+            {
+                Assert.IsFalse(FileOps.ValidDirectoryPath(validDirectoryPath_invalidData[i]));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void ValidDirectoryPath_validPaths()
+        {
+            for (int i = 0; i < validDirectoryPath_validData.Length; i++)
+            {
+                Assert.IsTrue(FileOps.ValidDirectoryPath(validDirectoryPath_validData[i]));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void ValidFileName_invalidName()
+        {
+            for (int i = 0; i < validFileName_invalidData.Length; i++)
+            {
+                Assert.IsFalse(FileOps.ValidFileName(validFileName_invalidData[i]));
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("FileOps")]
+        public void ValidFileName_validName()
+        {
+            for (int i = 0; i < validFileName_validData.Length; i++)
+            {
+                Assert.IsTrue(FileOps.ValidFileName(validFileName_validData[i]));
+            }
         }
 
         #endregion Public Methods
