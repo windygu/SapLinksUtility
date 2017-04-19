@@ -219,7 +219,10 @@ namespace FileIO
         /// <param name="directoryPath">
         /// The target directory path
         /// </param>
-        public virtual void Copy(string directoryPath)
+        /// <returns>
+        /// Returns the full file path of the target file
+        /// </returns>
+        public virtual string Copy(string directoryPath)
         {
             // Get the absolute directory path
             string targetPath = ValidateTargetPath(directoryPath);
@@ -232,7 +235,7 @@ namespace FileIO
                     FilePath = DirectoryPath
                 };
             }
-            // Create the full target file path
+            // Determine the full target file path
             string fullFilePath;
             try
             {
@@ -240,11 +243,9 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                string eFilePath = targetPath;
-                if (targetPath == null) eFilePath = NULL;
                 throw new FilePathException("Unable to determine full target file path", e)
                 {
-                    FilePath = eFilePath,
+                    FilePath = targetPath,
                     FileName = FileName
                 };
             }
@@ -270,6 +271,12 @@ namespace FileIO
                     FilePath = targetPath
                 };
             }
+
+            // If the source file is open for write, then save it first
+            if (Mode == FileMode.WRITE)
+            {
+                Save();
+            }
             // Copy the file to the target path
             try
             {
@@ -277,12 +284,13 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                throw new FileOperationException("Error moving file to target location", e)
+                throw new FileOperationException("Error copying file to target location", e)
                 {
                     SourcePath = FilePath,
                     TargetPath = fullFilePath
                 };
             }
+            return fullFilePath;
         }
 
         /// <summary>
@@ -335,63 +343,14 @@ namespace FileIO
         /// <param name="directoryPath">
         /// The target directory path
         /// </param>
-        public virtual void Move(string directoryPath)
+        /// <returns>
+        /// Returns the full file path of the target file
+        /// </returns>
+        public virtual string Move(string directoryPath)
         {
-            // Get the absolute directory path
-            string targetPath = ValidateTargetPath(directoryPath);
-            // Verify that the file is open
-            if (State != FileState.OPEN)
-            {
-                throw new FileOpenException("File not open")
-                {
-                    FileName = FileName,
-                    FilePath = directoryPath
-                };
-            }
-            // Create the full target file path
-            string fullFilePath;
-            try
-            {
-                fullFilePath = Path.Combine(targetPath, FileName);
-            }
-            catch (Exception e)
-            {
-                string eFilePath = targetPath;
-                if (targetPath == null) eFilePath = NULL;
-                throw new FilePathException("Unable to determine full target file path", e)
-                {
-                    FilePath = eFilePath,
-                    FileName = FileName
-                };
-            }
-            // If the target path matches the source path, return without doing anything
-            if (fullFilePath == FilePath) return;
-            // The target file must not already exist
-            try
-            {
-                FileOps.FileMustNotExist(fullFilePath);
-            }
-            catch (Exception e)
-            {
-                throw new FileOpenException("Target file already exists", e)
-                {
-                    FileName = FileName,
-                    FilePath = targetPath
-                };
-            }
-            // First copy the file to the target path
-            try
-            {
-                File.Copy(FilePath, fullFilePath);
-            }
-            catch (Exception e)
-            {
-                throw new FileOperationException("Error moving file to target location", e)
-                {
-                    SourcePath = FilePath,
-                    TargetPath = fullFilePath
-                };
-            }
+            // First copy the current file to the target directory
+            string filePath = Copy(directoryPath);
+            string targetPath = FileOps.GetDirectoryPath(filePath);
             // Delete the file from the source location if the copy operation was successful
             try
             {
@@ -406,6 +365,7 @@ namespace FileIO
                 };
             }
             DirectoryPath = targetPath;
+            return filePath;
         }
 
         /// <summary>

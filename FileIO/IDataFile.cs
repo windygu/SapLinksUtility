@@ -54,7 +54,10 @@
         /// <param name="directoryPath">
         /// Target directory
         /// </param>
-        void Copy(string directoryPath);
+        /// <returns>
+        /// Returns the full file path of the target file location
+        /// </returns>
+        string Copy(string directoryPath);
 
         /// <summary>
         /// Creates a new text file and opens it for writing.
@@ -81,7 +84,10 @@
         /// <param name="directoryPath">
         /// Target directory path
         /// </param>
-        void Move(string directoryPath);
+        /// <returns>
+        /// Returns the full file path of the target file location
+        /// </returns>
+        string Move(string directoryPath);
 
         /// <summary>
         /// Opens a text file for reading.
