@@ -311,7 +311,7 @@ namespace FileIO.Tests
         {
             for (int i = 0; i < findEndOfDirectoryPath_pathData.Length; i++)
             {
-                int result = FindEndOfDirectoryPath_valid_test(findEndOfDirectoryPath_pathData[i]);
+                int result = FindEndOfDirectoryPath(findEndOfDirectoryPath_pathData[i]);
                 Assert.AreEqual(findEndOfDirectoryPath_expectedData[i], result);
             }
         }
@@ -459,7 +459,7 @@ namespace FileIO.Tests
             Assert.Fail(msg);
         }
 
-        private int FindEndOfDirectoryPath_valid_test(string filePath)
+        private int FindEndOfDirectoryPath(string filePath)
         {
             return Convert.ToInt32(pt.InvokeStatic("FindEndOfDirectoryPath", filePath));
         }

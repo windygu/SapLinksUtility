@@ -7,7 +7,7 @@ namespace FileIO
     /// <summary>
     /// Object represents an encoded text file. Implements IDataFile interface.
     /// </summary>
-    internal class EncodedTextFile : TextFile, IDataFile
+    public class EncodedTextFile : TextFile, IDataFile
     {
         #region Private Fields
 
@@ -140,7 +140,7 @@ namespace FileIO
                     while (sr.Peek() >= 0) // Check to see if we've reached the end of the file
                     {
                         // Read the next line and store the decoded text string
-                        _fileData.Add(DecodeTextString(sr.ReadLine()));
+                        _fileData.Add(DecodeTextString(this, sr.ReadLine()));
                     }
                     if (Count > 0) Position = 0; // Set the file pointer to the first line
                     else Position = -1;
@@ -148,7 +148,7 @@ namespace FileIO
             }
             catch (Exception e)
             {
-                string msg = $"Error reading line {this.Count + 1} from file";
+                string msg = $"Error reading line {Count + 1} from file";
                 throw new FileIOException(msg, e)
                 {
                     FilePath = DirectoryPath,
@@ -169,7 +169,7 @@ namespace FileIO
                 {
                     foreach (string line in _fileData)
                     {
-                        sw.WriteLine(EncodeTextString(line));
+                        sw.WriteLine(EncodeTextString(this, line));
                     }
                 }
             }
@@ -223,7 +223,7 @@ namespace FileIO
         /// <returns>
         /// Returns the decoded text line as a string value
         /// </returns>
-        private string DecodeTextString(string line)
+        private static string DecodeTextString(EncodedTextFile etf, string line)
         {
             StringBuilder decodedLine = new StringBuilder();
             ushort p0 = 0;  // overall parity bit
@@ -270,8 +270,8 @@ namespace FileIO
                     {
                         throw new CorruptedFileException("Encoded text file is corrupted")
                         {
-                            FilePath = DirectoryPath,
-                            FileName = FileName
+                            FilePath = etf.DirectoryPath,
+                            FileName = etf.FileName
                         };
                     }
                 }
@@ -283,8 +283,8 @@ namespace FileIO
                     {
                         throw new CorruptedFileException("Encoded text file is corrupted")
                         {
-                            FilePath = DirectoryPath,
-                            FileName = FileName
+                            FilePath = etf.DirectoryPath,
+                            FileName = etf.FileName
                         };
                     }
                     // There are twelve possible bit positions in the encoded text character
@@ -295,8 +295,8 @@ namespace FileIO
                     {
                         throw new CorruptedFileException("Encoded text file is corrupted")
                         {
-                            FilePath = DirectoryPath,
-                            FileName = FileName
+                            FilePath = etf.DirectoryPath,
+                            FileName = etf.FileName
                         };
                     }
                     // If we reach this point, then there is one bit in error, and it is one of the 8
@@ -321,7 +321,7 @@ namespace FileIO
         /// <returns>
         /// Returns an encoded text line with embedded parity bits
         /// </returns>
-        private string EncodeTextString(string line)
+        private static string EncodeTextString(EncodedTextFile etf, string line)
         {
             StringBuilder encodedLine = new StringBuilder();
             // This routine uses a Hamming code to encode a string of text characters. Each character
@@ -339,8 +339,8 @@ namespace FileIO
                     string msg = $"Unsupported Unicode character found: '{x}' ({(ushort)x:X4})";
                     throw new InvalidCharacterException(msg)
                     {
-                        FilePath = DirectoryPath,
-                        FileName = FileName
+                        FilePath = etf.DirectoryPath,
+                        FileName = etf.FileName
                     };
                 }
                 ushort encoded = 0;  // holds the encoded character as a ushort
