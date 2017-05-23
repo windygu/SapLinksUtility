@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.3
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SapLinksUtility", "SapLinksUtility\SapLinksUtility.csproj", "{51F3A082-FE83-482D-A0C9-E41287234EE6}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Repository", "Repository\Repository.csproj", "{068DC454-3558-4B56-859F-A4520367D4CF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Repository.Tests", "Repository.Tests\Repository.Tests.csproj", "{3B26AFF9-B142-4873-9839-BAD41499C392}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataPod", "DataPod\DataPod.csproj", "{0F00CF78-FB69-455B-8AE4-3B7C52DBD1BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{3B26AFF9-B142-4873-9839-BAD41499C392}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B26AFF9-B142-4873-9839-BAD41499C392}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B26AFF9-B142-4873-9839-BAD41499C392}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F00CF78-FB69-455B-8AE4-3B7C52DBD1BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F00CF78-FB69-455B-8AE4-3B7C52DBD1BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F00CF78-FB69-455B-8AE4-3B7C52DBD1BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F00CF78-FB69-455B-8AE4-3B7C52DBD1BE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
