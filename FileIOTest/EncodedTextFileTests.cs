@@ -11,20 +11,20 @@ namespace FileIOTest
 
         private string DecodeTextString(EncodedTextFile etf, string line)
         {
-            return pt.InvokeStatic("DecodeTextString", etf, line).ToString();
+            return (pt.InvokeStatic("DecodeTextString", etf, line)).ToString();
         }
 
         private string EncodeTextString(EncodedTextFile etf, string line)
         {
-            return pt.InvokeStatic("EncodeTextString", etf, line).ToString();
+            return (pt.InvokeStatic("EncodeTextString", etf, line)).ToString();
         }
 
         private readonly string[,] encodeTextString_valid_data =
         {
             { "\u0000", "\u0000" },
             { "\u00ff", "\u0eef" },
-            { "\u00cc", "\u0f45" },
-            { "\u0055", "\u01c5" },
+            { "\u00cc", "\u0b8c" },
+            { "\u0055", "\u01a5" },
             { "\u000f", "\u010f" },
             { "\u00f0", "\u0fe0" },
             { "\u0052", "\u18b2" },
@@ -39,7 +39,14 @@ namespace FileIOTest
             for (int i = 0; i < encodeTextString_valid_data.GetLength(0); i++)
             {
                 string result = EncodeTextString(etf, encodeTextString_valid_data[i, 0]);
-                Assert.AreEqual(encodeTextString_valid_data[i, 1], result);
+                if (result != encodeTextString_valid_data[i,1])
+                {
+                    ushort rslt = (ushort)(result[0]);
+                    ushort expt = (ushort)((encodeTextString_valid_data[i, 1])[0]);
+                    string msg = $"EncodeTextString_valid test failed\nTest index: {i}\nActual result: " +
+                        $"{rslt:X4}\nExpected result: {expt:X4}";
+                    Assert.Fail(msg);
+                }
             }
         }
     }
