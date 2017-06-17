@@ -40,8 +40,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DataPod.cs" />
+    <Compile Include="DataRow.cs" />
+    <Compile Include="DataTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UnexpectedFileStateException.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FileIO\FileIO.csproj">

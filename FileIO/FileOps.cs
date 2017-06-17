@@ -12,7 +12,7 @@ namespace FileIO
         #region Public Methods
 
         /// <summary>
-        /// Combines to parts of a file path into one file path
+        /// Combines two parts of a file path into one file path
         /// </summary>
         /// <param name="filePath1">
         /// The first portion of the file path

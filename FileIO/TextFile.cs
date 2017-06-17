@@ -338,6 +338,41 @@ namespace FileIO
         }
 
         /// <summary>
+        /// Creates a new text file if the specified file doesn't already exist
+        /// </summary>
+        /// <param name="filePath">The full file path of the file to be created</param>
+        public virtual void CreateIfFileDoesNotExist(string filePath)
+        {
+            // This method should be called only if the TextFile object is in an INITIAL state.
+            if (State != FileState.INITIAL)
+            {
+                throw new FileOpenException("File state is not INITIAL")
+                {
+                    FilePath = DirectoryPath,
+                    FileName = FileName
+                };
+            }
+            // Obtain the absolute file path.
+            ParseFilePath(filePath);
+            // Create an empty file if the specified file does not exist.
+            if (!File.Exists(filePath))
+            {
+                FileOps.CreateFile(filePath);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new text file if the specified file doesn't already exist
+        /// </summary>
+        /// <param name="directoryPath">The directory path where the file is located</param>
+        /// <param name="fileName">The file name of the text file to be created</param>
+        public virtual void CreateIfFileDoesNotExist(string directoryPath, string fileName)
+        {
+            string filePath = FileOps.CombinePath(directoryPath, fileName);
+            CreateIfFileDoesNotExist(filePath);
+        }
+
+        /// <summary>
         /// Move the file to a different directory
         /// </summary>
         /// <param name="directoryPath">

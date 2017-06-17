@@ -268,7 +268,7 @@ namespace FileIO
                     // an exception.
                     if (p0 != 0)
                     {
-                        throw new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted (bad parity bits)")
                         {
                             FilePath = etf.DirectoryPath,
                             FileName = etf.FileName
@@ -281,7 +281,7 @@ namespace FileIO
                     // overall p0 parity bit is zero, then two or more bits are corrupted. Throw an exception.
                     if (p0 == 0)
                     {
-                        throw new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted (2 or more bad bits)")
                         {
                             FilePath = etf.DirectoryPath,
                             FileName = etf.FileName
@@ -293,7 +293,7 @@ namespace FileIO
                     // bit position 12, then throw an exception.
                     else if (badBit > 12)
                     {
-                        throw new CorruptedFileException("Encoded text file is corrupted")
+                        throw new CorruptedFileException("Encoded text file is corrupted (invalid bad bit)")
                         {
                             FilePath = etf.DirectoryPath,
                             FileName = etf.FileName
