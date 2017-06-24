@@ -11,8 +11,6 @@ namespace FileIO
 
         private const string _fileMovementMessage = "File operation exception";
         private string _msg = null;
-        private string _source = null;
-        private string _target = null;
 
         #endregion Private Fields
 
@@ -48,27 +46,11 @@ namespace FileIO
 
         public string SourcePath
         {
-            get
-            {
-                return _source;
-            }
-            set
-            {
-                _source = value;
-            }
-        }
+            get; set; } = null;
 
         public string TargetPath
         {
-            get
-            {
-                return _target;
-            }
-            set
-            {
-                _target = value;
-            }
-        }
+            get; set; } = null;
 
         #endregion Public Properties
     }

@@ -584,6 +584,26 @@ namespace FileIO
         }
 
         /// <summary>
+        /// Rest the file position back to the beginning of the file if it is opened for reading.
+        /// Throw an exception if the file is open for writing. Otherwise just return without doing anything.
+        /// </summary>
+        public void Reset()
+        {
+            if (State == FileState.OPEN)
+            {
+                if (Mode == FileMode.READ) Position = 0;
+                else
+                {
+                    throw new FileIOException("Can't reset file opened for write access")
+                    {
+                        FilePath = DirectoryPath,
+                        FileName = FileName
+                    };
+                }
+            }
+        }
+
+        /// <summary>
         /// Save the contents of the text file to disk
         /// </summary>
         public virtual void Save()
