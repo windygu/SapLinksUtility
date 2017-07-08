@@ -119,6 +119,17 @@ namespace FileIO
         }
 
         /// <summary>
+        /// Public property that returns true if we are positioned at the end of the file
+        /// </summary>
+        public virtual bool EndOfFile
+        {
+            get
+            {
+                return (Position < 0 || Position >= Count);
+            }
+        }
+
+        /// <summary>
         /// Public property that returns the file name of the TextFile object
         /// </summary>
         public virtual string FileName
@@ -515,7 +526,7 @@ namespace FileIO
         /// </returns>
         public virtual string ReadLine()
         {
-            if (Position < 0 || Position >= Count) return null;
+            if (EndOfFile) return null;
             else
             {
                 string line = _fileData[Position];
