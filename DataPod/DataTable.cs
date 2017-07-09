@@ -29,6 +29,99 @@ namespace Data
         /// </summary>
         public string FilePath { get; private set; }
 
+        /// <summary>
+        /// Property that returns the text file name associated with this data table
+        /// </summary>
+        public string FileName { get; private set; }
+
+        /// <summary>
+        /// Property that returns the directory path for the text file
+        /// </summary>
+        public string FileDirectoryPath
+        {
+            get
+            {
+                return _file.DirectoryPath;
+            }
+        }
+
+        /// <summary>
+        /// Private property that returns the state of the text file (INITIAL, OPEN, or CLOSED)
+        /// </summary>
+        private FileState FileState
+        {
+            get
+            {
+                return _file.State;
+            }
+        }
+
+        /// <summary>
+        /// Private property that returns the mode of the text file (READ, WRITE, or INITIAL)
+        /// </summary>
+        private FileMode FileMode
+        {
+            get
+            {
+                return _file.Mode;
+            }
+        }
+
+        /// <summary>
+        /// Private property that returns the current position within the text file
+        /// </summary>
+        private int FilePosition
+        {
+            get
+            {
+                return _file.Position;
+            }
+        }
+
+        /// <summary>
+        /// Private property that returns the number of lines in the test file
+        /// </summary>
+        private int FileLineCount
+        {
+            get
+            {
+                return _file.Count;
+            }
+        }
+
+        /// <summary>
+        /// Private property that returns a "true" if we have reached the end of the text file
+        /// </summary>
+        private bool EndOfFile
+        {
+            get
+            {
+                return _file.EndOfFile;
+            }
+        }
+
+        /// <summary>
+        /// Property that returns the number of field names for this data table
+        /// </summary>
+        public int FieldCount
+        {
+            get
+            {
+                return _fieldNames.Count;
+            }
+        }
+
+        /// <summary>
+        /// Property that returns the number of data rows for this data table
+        /// </summary>
+        public int RowCount
+        {
+            get
+            {
+                return _dataRows.Count;
+            }
+        }
+
         private List<string> _fieldNames; // List of field names for this DataTable
         private List<string[]> _dataRows; // List of data rows that make up this DataTable
         private EncodedTextFile _file; // Associated text file used to persist this DataTable
@@ -48,11 +141,12 @@ namespace Data
             // The created file will be empty
             _file.CreateIfFileDoesNotExist(directoryPath, fileName);
             FilePath = _file.FilePath;
+            FileName = _file.FileName;
             _fieldNames = new List<string>();
             _dataRows = new List<string[]>();
             // Open the associated text file for reading
             _file.OpenForRead(FilePath);
-            if (_file.Count == 0)
+            if (FileLineCount == 0)
             {
                 // If the associated text file is empty, then initialize the file by writing the list of field names
                 // to the file.
@@ -72,7 +166,7 @@ namespace Data
         protected virtual void Initialize(string[] fieldNames)
         {
             // First, close the file if it is open
-            if (_file.State == FileState.OPEN)
+            if (FileState == FileState.OPEN)
             {
                 _file.Close();
             }
@@ -104,10 +198,404 @@ namespace Data
         /// </summary>
         protected virtual void Load()
         {
-            if (_file.State == FileState.OPEN)
+            // Prepare the text file for loading. Close it if it is open for writing. Open it for reading.
+            PrepareFileForLoad();
+            // Clear the field name list and data row list
+            _fieldNames.Clear();
+            _dataRows.Clear();
+            // Throw an exception if the text file is empty. At a minimum it should contain a list of field names.
+            if (FileLineCount == 0)
+            {
+                string msg = $"File \"{FileName}\" of table \"{Name}\" is empty";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Load the field names from the text file
+            LoadFieldNames();
+            // Load the data rows from the text file
+            LoadDataRows();
+            // We should be at the end of the text file now. Throw an exception if there are more lines in the file.
+            if (!EndOfFile)
+            {
+                string fileData = _file.ReadLine();
+                string msg = $"Table \"{Name}\" - End of file \"{FileName}\" not reached after the End Data " +
+                    $"List control. Line {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+        }
+
+        /// <summary>
+        /// Load all of the data rows from the text file into the data table
+        /// </summary>
+        private void LoadDataRows()
+        {
+            // Throw an exception if we reach the end of the file before reading any data rows
+            if (EndOfFile)
+            {
+                string msg = $"Table \"{Name}\" - End of file \"{FileName}\" reached before any data rows " +
+                        $"were read";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Read the next line from the file. Should be the Begin Data Rows control line.
+            string fileData = _file.ReadLine();
+            // Throw an exception if the line is null (this shouldn't happen)
+            if (fileData == null)
+            {
+                string msg = $"Table \"{Name}\" - Null line found in file \"{FileName}\" when " +
+                    $"Begin Data List was expected";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Split the line into individual fields that are delimited by the delimiter character
+            string[] begindDataListLine = fileData.Split(DelimChar);
+            // The next line in the file should be the Begin Data List control. Throw an exception if it is not.
+            if (begindDataListLine[0] != BeginDataList)
+            {
+                string msg = $"Table \"{Name}\" - Missing the Begin Data List control in file \"{FileName}\"" +
+                    $"\nLine {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // The Begin Data List control should be followed by a value which equals the number of data rows
+            if (begindDataListLine.Length != 2)
+            {
+                string msg = $"Table \"{Name}\" - Missing the field count value of the Begin Field List control " +
+                    $"in file \"{FileName}\"\nLine {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            int totalRows = 0; // Total number of data rows we expect to find in the text file
+            // Convert the row count value from a string value to an integer value
+            try
+            {
+                totalRows = Convert.ToInt32(begindDataListLine[1]);
+            }
+            // Throw an exception if we are unable to convert the string value to an integer
+            catch (Exception e)
+            {
+                string msg = $"Table \"{Name}\" - Unable to convert the data row count string value to an integer " +
+                    $"in file \"{FileName}\"\nLine {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg, e)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            bool done = false; // Loop control. Set to "true" when we reach the end of the field list.
+            // Read all of the field name lines from the text file and add the field names to the field list
+            while (!done)
+            {
+                // Throw an exception if we reach the end of the file too soon
+                if (EndOfFile)
+                {
+                    string msg = $"Table \"{Name}\" - Reached the end of file \"{FileName}\" before finding " +
+                        $"the End Data List control.\nFound {RowCount} of {totalRows} data rows.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                fileData = _file.ReadLine();
+                // Throw an exception if a null line is returned from the file (this should never happen)
+                if (fileData == null)
+                {
+                    string msg = $"Table \"{Name}\" - Null line returned from file \"{FileName}\" when " +
+                        $"reading the data rows.\nFound {RowCount} of {totalRows} data rows.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // If we have reached the End Data List control, then we have processed all of the data rows. Set
+                // the flag to indicate we're done and return to the top of the loop.
+                if (fileData == EndDataList)
+                {
+                    done = true;
+                    continue;
+                }
+                // There shouldn't be any other control lines in the file other than the End Data List control.
+                // Throw an exception if we come across any other control field.
+                else if (fileData.Substring(0, ControlFieldPrefix.Length) == ControlFieldPrefix)
+                {
+                    string msg = $"Table \"{Name}\" - Unexpected control field in file \"{FileName}\".\n" +
+                        $"Line {FilePosition} from file ->\n{fileData}\nFound {RowCount} of {totalRows} data rows.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // The first two characters on the line should be the Data Row Prefix. Discard the prefix and separate
+                // the rest of the line into individual fields. Keep a count of total data rows processed thus far.
+                else if (fileData.Substring(0, DataRowPrefix.Length) == DataRowPrefix)
+                {
+                    string[] dataFields = (fileData.Substring(DataRowPrefix.Length)).Split(DelimChar);
+                    // The number of fields should match the number of field names. Throw an exception if it doesn't.
+                    if (dataFields.Length != FieldCount)
+                    {
+                        string msg = $"Table \"{Name}\" - Data row {RowCount + 1} in file \"{FileName}\" " +
+                            $"contains an incorrect number of fields.\nExpected {FieldCount} fields, but found " +
+                            $"{dataFields.Length}.\nLine {FilePosition} from file contains this ->\n{fileData}";
+                        throw new DataTableLoadException(msg)
+                        {
+                            TableName = Name,
+                            FileName = FileName,
+                            DirectoryPath = FileDirectoryPath
+                        };
+                    }
+                    _dataRows.Add(dataFields);
+                }
+                // If the first two characters on the line aren't a Control Field Prefix or a Data Row Prefix, then
+                // the file has been corrupted. Throw an exception.
+                else
+                {
+                    string msg = $"Table \"{Name}\" - Data Row Prefix missing in file \"{FileName}\".\n" +
+                        $"Line {FilePosition} from file ->\n{fileData}\nFound {RowCount} of {totalRows} data rows.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+            }
+            // Verify that we have read the expected number of data rows. Throw an exception if we haven't.
+            if (RowCount != totalRows)
+            {
+                string rowDiff = (RowCount < totalRows) ? "Fewer" : "More";
+                string msg = $"Table \"{Name}\" - {rowDiff} rows were found than were expected.\n " +
+                    $"Found {RowCount} of {totalRows} data rows.";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+        }
+
+        /// <summary>
+        /// Load all of the field names from the text file into the data table
+        /// </summary>
+        private void LoadFieldNames()
+        {
+            // Read the first line from the text file
+            string fileData = _file.ReadLine();
+            // Throw an exception if the first line is null (this shouldn't happen)
+            if (fileData == null)
+            {
+                string msg = $"Table \"{Name}\" - First line of file \"{FileName}\" is null";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Split the line into individual fields that are delimited by the delimiter character
+            string[] beginFieldListLine = fileData.Split(DelimChar);
+            // The first line in the file should be the Begin Field List control. Throw an exception if it is not.
+            if (beginFieldListLine[0] != BeginFieldList)
+            {
+                string msg = $"Table \"{Name}\" - Missing the Begin Field List control in file \"{FileName}\"" +
+                    $"\nThe first line in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // The Begin Field List control should be followed by a value which equals the number of field names
+            if (beginFieldListLine.Length != 2)
+            {
+                string msg = $"Table \"{Name}\" - Missing the field count value of the Begin Field List control " +
+                    $"in file \"{FileName}\"\nThe first line in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            int totalFields = 0; // Total number of fields we expect to find in the text file
+            // Convert the field count value from a string value to an integer value
+            try
+            {
+                totalFields = Convert.ToInt32(beginFieldListLine[1]);
+            }
+            // Throw an exception if we are unable to convert the string value to an integer
+            catch (Exception e)
+            {
+                string msg = $"Table \"{Name}\" - Unable to convert the field count string value to an integer " +
+                    $"in file \"{FileName}\"\nThe first line in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg, e)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            bool done = false;
+            // Read all of the field name lines from the text file and add the field names to the field list
+            while (!done)
+            {
+                // Throw an exception if we reach the end of the file too soon
+                if (EndOfFile)
+                {
+                    string msg = $"Table \"{Name}\" - Reached the end of file \"{FileName}\" before finding " +
+                        $"the End Field List control.\nFound {FieldCount} of {totalFields} fields.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                fileData = _file.ReadLine();
+                // Throw an exception if a null line is returned from the file (this should never happen)
+                if (fileData == null)
+                {
+                    string msg = $"Table \"{Name}\" - Null line returned from file \"{FileName}\" when " +
+                        $"reading the list of fields.\nFound {FieldCount} of {totalFields} fields.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // Throw an exception if there are any field delimiter characters on the current line.
+                // The field name lines shouldn't contain any delimiter characters.
+                if (fileData.Contains(Delimiter))
+                {
+                    string msg = $"Table \"{Name}\" - Delimiter found in field list of file \"{FileName}\".\n" +
+                        $"Line {FilePosition} from file ->\n{fileData}\nFound {FieldCount} of {totalFields} fields.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // If we have reached the End Field List control, then we have processed all of the field names. Set
+                // the flag to indicate we're done and return to the top of the loop.
+                if (fileData == EndFieldList)
+                {
+                    done = true;
+                    continue;
+                }
+                // The next control field in the file should be the End Field List control which we just checked for
+                // above. Throw an exception if we come across any other control field.
+                else if (fileData.Substring(0, ControlFieldPrefix.Length) == ControlFieldPrefix)
+                {
+                    string msg = $"Table \"{Name}\" - Unexpected control field in file \"{FileName}\".\n" +
+                        $"Line {FilePosition} from file ->\n{fileData}\nFound {FieldCount} of {totalFields} fields.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // The first two characters on the line should be the Data Row Prefix. Discard the prefix and add the
+                // field name to the field name list. Keep a tally of how many fields we've processed thus far.
+                else if (fileData.Substring(0, DataRowPrefix.Length) == DataRowPrefix)
+                {
+                    _fieldNames.Add(fileData.Substring(DataRowPrefix.Length));
+                }
+                // If the first two characters on the line aren't a Control Field Prefix or a Data Row Prefix, then
+                // the file has been corrupted. Throw an exception.
+                else
+                {
+                    string msg = $"Table \"{Name}\" - Data Row Prefix missing in file \"{FileName}\".\n" +
+                        $"Line {FilePosition} from file ->\n{fileData}\nFound {FieldCount} of {totalFields} fields.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+            }
+            // We expect the number of field names read from the text file to match the number that was specified
+            // on the Begin Field List control line
+            if (FieldCount == totalFields)
+            {
+                // Throw an exception if there are an invalid number of fields. The number of fields must be in the
+                // range from 1 to MaxFields.
+                if (FieldCount <= 0 || FieldCount > MaxFields)
+                {
+                    string msg = $"Table \"{Name}\" - Invalid number of fields in file \"{FileName}\".\n" +
+                        $"Found {FieldCount} of {totalFields} fields. The number found should be between " +
+                        $"1 and {MaxFields}.";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+            }
+            // Throw an exception if the number of fields found doesn't match the number specified on the
+            // Begin Field List control line.
+            else
+            {
+                string fieldMsg = (FieldCount < totalFields) ? "Too few" : "Too many";
+                string msg = $"Table \"{Name}\" - {fieldMsg} fields found in file \"{FileName}\".\n" +
+                        $"Found {FieldCount} of {totalFields} fields.";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+        }
+
+        /// <summary>
+        /// Prepare the text file for loading into the data table. If the file is open, close it. If the file is
+        /// in the initial state or closed, open it for reading. If the file is already opened for reading, reset
+        /// the file pointer back to the beginning of the file.
+        /// </summary>
+        private void PrepareFileForLoad()
+        {
+            if (FileState == FileState.OPEN)
             {
                 // Close the text file if it is currently open for writing
-                if (_file.Mode == FileMode.WRITE)
+                if (FileMode == FileMode.WRITE)
                 {
                     _file.Close();
                 }
@@ -121,18 +609,18 @@ namespace Data
                     // Throw an exception if we are unable to reset the position pointer for the file
                     catch (Exception e)
                     {
-                        string msg = $"Unable to reset file \"{_file.FileName}\" for data table \"{Name}\"";
+                        string msg = $"Unable to reset file \"{FileName}\" for data table \"{Name}\"";
                         throw new DataTableLoadException(msg, e)
                         {
                             TableName = Name,
-                            FileName = _file.FileName,
-                            DirectoryPath = _file.DirectoryPath
+                            FileName = FileName,
+                            DirectoryPath = FileDirectoryPath
                         };
                     }
                 }
             }
             // Open the text file for reading if it is currently closed or in an initial state
-            if (_file.State == FileState.INITIAL || _file.State == FileState.CLOSED)
+            if (FileState == FileState.INITIAL || FileState == FileState.CLOSED)
             {
                 try
                 {
@@ -141,236 +629,30 @@ namespace Data
                 // Throw an exception if we can't open the file for reading
                 catch (Exception e)
                 {
-                    string msg = $"Unable to open file \"{_file.FileName}\" to load table \"{Name}\"";
+                    string msg = $"Unable to open file \"{FileName}\" to load table \"{Name}\"";
                     throw new DataTableLoadException(msg, e)
                     {
                         TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
                     };
                 }
             }
             // Throw an exception if the file isn't opened for reading.
             // Note: This exception shouldn't occur.
-            if (_file.State != FileState.OPEN || _file.Mode != FileMode.READ)
+            if (FileState != FileState.OPEN || FileMode != FileMode.READ)
             {
                 string msg = $"Expected file state {FileState.OPEN.ToString()} and " +
-                    $"file mode {FileMode.READ.ToString()}\nbut found file state {_file.State.ToString()} and " +
-                    $"file mode {_file.Mode.ToString()}";
+                    $"file mode {FileMode.READ.ToString()}\nbut found file state {FileState.ToString()} and " +
+                    $"file mode {FileMode.ToString()}";
                 throw new UnexpectedFileStateException(msg)
                 {
                     ExpectedState = FileState.OPEN.ToString(),
                     ExpectedMode = FileMode.READ.ToString(),
-                    ActualState = _file.State.ToString(),
-                    ActualMode = _file.Mode.ToString()
+                    ActualState = FileState.ToString(),
+                    ActualMode = FileMode.ToString()
                 };
             }
-            // Clear the field name list and data row list
-            _fieldNames.Clear();
-            _dataRows.Clear();
-            // Throw an exception if the text file is empty. At a minimum it should contain a list of field names.
-            if (_file.Count == 0)
-            {
-                string msg = $"File \"{_file.FileName}\" of table \"{Name}\" is empty";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            string fileData = null;
-            // Read the first line from the text file
-            fileData = _file.ReadLine();
-            // Throw an exception if the first line is null (this shouldn't happen)
-            if (fileData == null)
-            {
-                string msg = $"Table \"{Name}\" - First line of file \"{_file.FileName}\" is null";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            // Split the line into individual fields that are delimited by the delimiter character
-            string[] firstLine = fileData.Split(DelimChar);
-            // The first line in the file should be the Begin Field List control. Throw an exception if it is not.
-            if (firstLine[0] != BeginFieldList)
-            {
-                string msg = $"Table \"{Name}\" - Missing the Begin Field List control in file \"{_file.FileName}\"" +
-                    $"\nThe first line in the file contains this ->\n{firstLine}";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            // The Begin Field List control should be followed by a value which equals the number of field names
-            if (firstLine.Length != 2)
-            {
-                string msg = $"Table \"{Name}\" - Missing the field count value of the Begin Field List control " +
-                    $"in file \"{_file.FileName}\"\nThe first line in the file contains this ->\n{firstLine}";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            int totalFields = 0; // Total number of fields we expect to find in the text file
-            // Convert the field count value from a string value to an integer value
-            try
-            {
-                totalFields = Convert.ToInt32(firstLine[1]);
-            }
-            // Throw an exception if we are unable to convert the string value to an integer
-            catch (Exception e)
-            {
-                string msg = $"Table \"{Name}\" - Unable to convert the field count string value to an integer " +
-                    $"in file \"{_file.FileName}\"\nThe first line in the file contains this ->\n{firstLine}";
-                throw new DataTableLoadException(msg, e)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            int fieldCount = 0; // Actual number of fields found in the text file
-            bool done = false; // Loop control. Set to "true" when we reach the end of the field list.
-            // Read all of the field name lines from the text file and add the field names to the field list
-            while (!done)
-            {
-                // Throw an exception if we reach the end of the file too soon
-                if (_file.EndOfFile)
-                {
-                    string msg = $"Table \"{Name}\" - Reached the end of file \"{_file.FileName}\" before finding " +
-                        $"the End Field List control.\nFound {fieldCount} of {totalFields} fields.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-                fileData = _file.ReadLine();
-                // Throw an exception if a null line is returned from the file (this should never happen)
-                if (fileData == null)
-                {
-                    string msg = $"Table \"{Name}\" - Null line returned from file \"{_file.FileName}\" when " +
-                        $"reading the list of fields.\nFound {fieldCount} of {totalFields} fields.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-                // Throw an exception if there are any field delimiter characters on the current line.
-                // The field name lines shouldn't contain any delimiter characters.
-                if (fileData.Contains(Delimiter))
-                {
-                    int i = _file.Position + 1;
-                    string msg = $"Table \"{Name}\" - Delimiter found in field list of file \"{_file.FileName}\".\n" +
-                        $"Line {i} from file ->\n{fileData}\nFound {fieldCount} of {totalFields} fields.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-                // If we have reached the End Field List control, then we have processed all of the field names. Set
-                // the flag to indicate we're done and return to the top of the loop.
-                if (fileData == EndFieldList)
-                {
-                    done = true;
-                    continue;
-                }
-                // The next control field in the file should be the End Field List control which we just checked for
-                // above. Throw an exception if we come across any other control field.
-                else if (fileData.Substring(0,ControlFieldPrefix.Length) == ControlFieldPrefix)
-                {
-                    int i = _file.Position + 1;
-                    string msg = $"Table \"{Name}\" - Unexpected control field in file \"{_file.FileName}\".\n" +
-                        $"Line {i} from file ->\n{fileData}\nFound {fieldCount} of {totalFields} fields.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-                // The first two characters on the line should be the Data Row Prefix. Discard the prefix and add the
-                // field name to the field name list. Keep a tally of how many fields we've processed thus far.
-                else if (fileData.Substring(0,DataRowPrefix.Length) == DataRowPrefix)
-                {
-                    _fieldNames.Add(fileData.Substring(DataRowPrefix.Length));
-                    fieldCount++;
-                }
-                // If the first two characters on the line aren't a Control Field Prefix or a Data Row Prefix, then
-                // the file has been corrupted. Throw an exception.
-                else
-                {
-                    int i = _file.Position + 1;
-                    string msg = $"Table \"{Name}\" - Data Row Prefix missing in file \"{_file.FileName}\".\n" +
-                        $"Line {i} from file ->\n{fileData}\nFound {fieldCount} of {totalFields} fields.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-            }
-            // We expect the number of field names read from the text file to match the number that was specified
-            // on the Begin Field List control line
-            if (fieldCount == totalFields)
-            {
-                // Throw an exception if there are an invalid number of fields. The number of fields must be in the
-                // range from 1 to MaxFields.
-                if (fieldCount <= 0 || fieldCount > MaxFields)
-                {
-                    string msg = $"Table \"{Name}\" - Invalid number of fields in file \"{_file.FileName}\".\n" +
-                        $"Found {fieldCount} of {totalFields} fields. The number found should be between " +
-                        $"1 and {MaxFields}.";
-                    throw new DataTableLoadException(msg)
-                    {
-                        TableName = Name,
-                        FileName = _file.FileName,
-                        DirectoryPath = _file.DirectoryPath
-                    };
-                }
-            }
-            // Throw an exception if the number of fields found doesn't match the number specified on the
-            // Begin Field List control line.
-            else
-            {
-                string fieldMsg = (fieldCount < totalFields) ? "Too few" : "Too many";
-                string msg = $"Table \"{Name}\" - {fieldMsg} fields found in file \"{_file.FileName}\".\n" +
-                        $"Found {fieldCount} of {totalFields} fields.";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            // Throw an exception if we reach the end of the file before reading any data rows
-            if (_file.EndOfFile)
-            {
-                string msg = $"Table \"{Name}\" - End of file \"{_file.FileName}\" reached before any data rows " +
-                        $"were read";
-                throw new DataTableLoadException(msg)
-                {
-                    TableName = Name,
-                    FileName = _file.FileName,
-                    DirectoryPath = _file.DirectoryPath
-                };
-            }
-            // Read the next line from the file. Should be the Begin Data Rows control line.
-            fileData = _file.ReadLine();
         }
     }
 }
