@@ -41,8 +41,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataRow.cs" />
+    <Compile Include="DataRowExecption.cs" />
     <Compile Include="DataTable.cs" />
     <Compile Include="DataTableLoadException.cs" />
+    <Compile Include="DataTableSaveException.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnexpectedFileStateException.cs" />
   </ItemGroup>

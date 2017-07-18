@@ -11,6 +11,7 @@ namespace Data
     {
         private const string ControlFieldPrefix = "##"; // String that appears at the start of every control field
         private const string DataRowPrefix = "->"; // String that appears at the start of every data row in the file
+        private const string TableNameHeader = ControlFieldPrefix + "TNH"; // Table Name Header control
         private const string BeginFieldList = ControlFieldPrefix + "BFL"; // Start list of field names
         private const string EndFieldList = ControlFieldPrefix + "EFL"; // End list of field names
         private const string BeginDataList = ControlFieldPrefix + "BDL"; // Beginning of data rows
@@ -156,6 +157,176 @@ namespace Data
             {
                 // If the associated text file contains data, then load that data into the DataTable
                 Load();
+                // Verify that the list of field names returned from the text file matches the expected list of
+                // fields names passed to this constructor.
+                ValidateTableFieldNameList(fieldNames);
+            }
+        }
+
+        /// <summary>
+        /// Add a new data row to the table. Returns "true" if successful. Returns "false" if there is already a row
+        /// in the table with a matching unique key.
+        /// </summary>
+        /// <param name="dataRow">A DataRow object representing the data row to be added to the table</param>
+        /// <returns>Returns "true" if the data row is successfully added to the table. Otherwise,
+        /// returns "false".</returns>
+        public bool AddRow(DataRow dataRow)
+        {
+            // Get the list of field names from the data row
+            string[] fieldNames = dataRow.FieldList;
+            // Verify that the data row contains all of the correct fields for this data table
+            ValidateDataRowFieldNames(fieldNames);
+            if (dataRow.KeyCount > 0)
+            {
+                string[] keys = dataRow.KeyList; // List of key field names
+                string[] keyValues = new string[keys.Length]; // Values of the key fields
+                int[] tableKeyFieldIndex = GetFieldIndexValues(keys); // Get indexes to table key fields
+                // Retrieve the value from the data row for each key field
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    keyValues[i] = dataRow[keys[i]];
+                }
+                if (RowWithKeyExists(tableKeyFieldIndex, keyValues)) return false;
+            }
+            int[] tableFieldIndex = GetFieldIndexValues(fieldNames);
+            string[] dataRowValues = new string[fieldNames.Length];
+            for (int i = 0; i < fieldNames.Length; i++)
+            {
+                dataRowValues[tableFieldIndex[i]] = dataRow[fieldNames[i]];
+            }
+            _dataRows.Add(dataRowValues);
+            return true;
+        }
+
+        private int[] GetFieldIndexValues(string[] fieldNames)
+        {
+            int[] fieldIndexList = new int[fieldNames.Length];
+            for (int i = 0; i < fieldNames.Length; i++)
+            {
+                if (_fieldNames.Contains(fieldNames[i]))
+                {
+                    fieldIndexList[i] = _fieldNames.FindIndex(delegate (string fieldName)
+                    {
+                        return (fieldName == fieldNames[i]);
+                    });
+                }
+                else
+                {
+                    // TODO: Throw an exception
+                }
+            }
+            return fieldIndexList;
+        }
+
+        /// <summary>
+        /// Scan the data rows in the table to see if any of them contain a specified set of key field values.
+        /// Return "true" if any data row matches all of the key field values. Otherwise return "false".
+        /// </summary>
+        /// <param name="fieldIndex">Array contains a list of index values corresponding to the key fields</param>
+        /// <param name="fieldValue">Array contains the key field values to search for</param>
+        /// <returns>Returns "true" if any data row matches all of the key field values</returns>
+        private bool RowWithKeyExists(int[] fieldIndex, string[] fieldValue)
+        {
+            // Search all of the data rows in the table
+            foreach (string[] dataRow in _dataRows)
+            {
+                // Start out by assuming the current data row is a match
+                bool match = true;
+                // Check all of the key fields
+                for (int i = 0; i < fieldIndex.Length; i++)
+                {
+                    // If the key field value in the current data row doesn't match the value being searched on,
+                    // set the match indicator to "false" and go check the next data row.
+                    if (dataRow[fieldIndex[i]] != fieldValue[i])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                // If we reach this point, then all of the key field values in the data row match. Return "true".
+                if (match) return true;
+            }
+            // If we reach this point then none of the data rows were a match. Return "false".
+            return false;
+        }
+
+        /// <summary>
+        /// Validate that the list of field names in a data row exactly matches the list of field names for this table.
+        /// Throw an exception if there is any discrepancy.
+        /// </summary>
+        /// <param name="dataRowFieldNames"></param>
+        private void ValidateDataRowFieldNames(string[] dataRowFieldNames)
+        {
+            if (dataRowFieldNames.Length == 0)
+            {
+                throw new DataRowException("Data row contains no fields");
+            }
+            // Verify that each of the fields in the data row are also fields in the table
+            foreach (string fieldName in dataRowFieldNames)
+            {
+                if (_fieldNames.Contains(fieldName)) continue;
+                // Throw an exception if the data row field name doesn't exist in the table
+                else
+                {
+                    string msg = $"Data row field name \"{fieldName}\" doesn't exist in table \"{Name}\"";
+                    throw new DataRowException(msg);
+                }
+            }
+            // Verify that each of the table field names also appear in the data row
+            foreach (string fieldName in _fieldNames)
+            {
+                if (dataRowFieldNames.Contains(fieldName)) continue;
+                // Throw an exception if the data row doesn't contain all of the fields that are in the table
+                else
+                {
+                    string msg = $"Table \"{Name}\" field \"{fieldName}\" is missing in the data row";
+                    throw new DataRowException(msg);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Verify that the list of field names that were read in from the text file exactly matches the expected
+        /// list of field names that was passed to the constructor.
+        /// </summary>
+        /// <param name="fieldNames"></param>
+        private void ValidateTableFieldNameList(string[] fieldNames)
+        {
+            // Check to see that each of the field names that were read in from the text file are in the list of
+            // expected field names
+            foreach (string fieldName in _fieldNames)
+            {
+                if (fieldNames.Contains(fieldName)) continue;
+                // Throw an exception if the text file contains any field names that aren't in the list of
+                // expected field names
+                else
+                {
+                    string msg = $"Table \"{Name}\" - Unexpected field name \"{fieldName}\" found in file " +
+                        $"\"{FileName}\"";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+            }
+            // Verify that each of the names in the expected list of field names was found in the text file
+            foreach (string fieldName in fieldNames)
+            {
+                if (_fieldNames.Contains(fieldName)) continue;
+                // Throw an exception if we didn't find all of the expected field names in the text file
+                else
+                {
+                    string msg = $"Table \"{Name}\" - Expected field name \"{fieldName}\" is missing in file " +
+                        $"\"{FileName}\"";
+                    throw new DataTableLoadException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
             }
         }
 
@@ -163,40 +334,21 @@ namespace Data
         /// Initialize a new file by writing the list of field names to the file
         /// </summary>
         /// <param name="fieldNames"></param>
-        protected virtual void Initialize(string[] fieldNames)
+        protected void Initialize(string[] fieldNames)
         {
-            // First, close the file if it is open
-            if (FileState == FileState.OPEN)
-            {
-                _file.Close();
-            }
-            // Open the file for writing
-            _file.OpenForWrite(FullFilePath);
-            // Write the "beginning of field list" identifier to the file
-            string beginFields = BeginFieldList + Delimiter + fieldNames.Length.ToString();
-            _file.WriteLine(beginFields);
-            // Write each of the field names to the file. Also add each field name to the list of valid field names
-            // for this DataTable.
+            // Add the list of field names to the field name list
             foreach (string fieldName in fieldNames)
             {
                 _fieldNames.Add(fieldName);
-                _file.WriteLine(DataRowPrefix + fieldName);
             }
-            // Write the "end of field list" identifier to the file
-            _file.WriteLine(EndFieldList);
-            // Write the "beginning of data rows" identifier to the file
-            string beginData = BeginDataList + Delimiter + Convert.ToString(0);
-            _file.WriteLine(beginData);
-            // Write the "end of data rows" identifier to the file
-            _file.WriteLine(EndDataList);
-            // Close the file to save the changes
-            _file.Close();
+            // Save the table to the text file
+            Save();
         }
 
         /// <summary>
         /// Load the contents of the associated text file into the DataTable
         /// </summary>
-        protected virtual void Load()
+        protected void Load()
         {
             // Prepare the text file for loading. Close it if it is open for writing. Open it for reading.
             PrepareFileForLoad();
@@ -214,6 +366,8 @@ namespace Data
                     DirectoryPath = FileDirectoryPath
                 };
             }
+            // Load the table name from the text file
+            LoadTableName();
             // Load the field names from the text file
             LoadFieldNames();
             // Load the data rows from the text file
@@ -224,6 +378,78 @@ namespace Data
                 string fileData = _file.ReadLine();
                 string msg = $"Table \"{Name}\" - End of file \"{FileName}\" not reached after the End Data " +
                     $"List control. Line {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+        }
+
+        /// <summary>
+        /// Read the table name header from the text file. Throw an exception if the name found in the file
+        /// doesn't match the name of this table.
+        /// </summary>
+        private void LoadTableName()
+        {
+            string fileData = _file.ReadLine();
+            // Throw an exception if the line is null (this shouldn't happen)
+            if (fileData == null)
+            {
+                string msg = $"Table \"{Name}\" - Null line found in file \"{FileName}\" when " +
+                    $"Table Name Header was expected";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Split the line into individual fields that are delimited by the delimiter character
+            string[] tableNameHeader = fileData.Split(DelimChar);
+            // Throw an exception if the line doesn't contain the Table Name Header control
+            if (tableNameHeader[0] != TableNameHeader)
+            {
+                string msg = $"Table \"{Name}\" - Missing the Table Name Header control in file \"{FileName}\"" +
+                    $"\nLine {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Throw an exception if there isn't exactly one parameter following the Table Name Header control
+            if (tableNameHeader.Length != 2)
+            {
+                string msg = $"Table \"{Name}\" - Invalid number of parameters in the Table Name Header control " +
+                    $"in file \"{FileName}\"\nLine {FilePosition} in the file contains this ->\n{fileData}";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            string tableName = tableNameHeader[1];
+            // Throw an exception if the table name returned from the text file doesn't match the name of this table
+            if (tableName != Name)
+            {
+                string msg = $"Incorrect table name found in file \"{FileName}\".\nExpected \"{Name}\" " +
+                    $"but found \"{tableName}\".";
+                throw new DataTableLoadException(msg)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
+                };
+            }
+            // Throw an exception if we have reached the end of the text file
+            if (EndOfFile)
+            {
+                string msg = $"Table \"{Name}\" - End of file \"{FileName}\" reached immediately after the " +
+                    "Table Name Header line";
                 throw new DataTableLoadException(msg)
                 {
                     TableName = Name,
@@ -282,7 +508,7 @@ namespace Data
             // The Begin Data List control should be followed by a value which equals the number of data rows
             if (begindDataListLine.Length != 2)
             {
-                string msg = $"Table \"{Name}\" - Missing the field count value of the Begin Field List control " +
+                string msg = $"Table \"{Name}\" - Invalid number of parameters in the Begin Field List control " +
                     $"in file \"{FileName}\"\nLine {FilePosition} in the file contains this ->\n{fileData}";
                 throw new DataTableLoadException(msg)
                 {
@@ -403,7 +629,7 @@ namespace Data
         private void LoadDataRows()
         {
             int totalRows = GetRowCount(); // Get the total number of expected data rows
-            // Read all of the data rows from the text file and add the field names to the field list
+            // Read all of the data rows from the text file and add the row data to the data list
             while (!LoadNextDataRow(totalRows)) { }
             // Verify that we have read the expected number of data rows. Throw an exception if we haven't.
             if (RowCount != totalRows)
@@ -679,6 +905,123 @@ namespace Data
                     ExpectedMode = FileMode.READ.ToString(),
                     ActualState = FileState.ToString(),
                     ActualMode = FileMode.ToString()
+                };
+            }
+        }
+
+        /// <summary>
+        /// Save the table contents to the text file
+        /// </summary>
+        public void Save()
+        {
+            // Open the text file for writing
+            PrepareFileForSave();
+            // Write the table name header to the text file
+            WriteTableNameHeader();
+            // Write the list of fields to the text file
+            WriteFieldList();
+            // Write the data rows to the text file
+            WriteDataRows();
+            // Close the file to save the changes
+            _file.Close();
+        }
+
+        /// <summary>
+        /// Write the Table Name Header to the text file
+        /// </summary>
+        private void WriteTableNameHeader()
+        {
+            _file.WriteLine(TableNameHeader + Delimiter + Name);
+        }
+
+        /// <summary>
+        /// Write the list of field names to the text file
+        /// </summary>
+        private void WriteFieldList()
+        {
+            // Write the Begin Field List line to the text file
+            string beginFieldList = BeginFieldList + Delimiter + Convert.ToString(FieldCount);
+            _file.WriteLine(beginFieldList);
+            // Write the list of field names to the text file
+            if (FieldCount > 0)
+            {
+                foreach (string fieldName in _fieldNames)
+                {
+                    _file.WriteLine(DataRowPrefix + fieldName);
+                }
+            }
+            // Write the End Field List line to the text file
+            _file.WriteLine(EndFieldList);
+        }
+
+        /// <summary>
+        /// Write all of the data rows to the text file
+        /// </summary>
+        private void WriteDataRows()
+        {
+            // Write the Begin Data List line to the text file
+            string beginDataList = BeginDataList + Delimiter + Convert.ToString(RowCount);
+            _file.WriteLine(beginDataList);
+            // Write the data rows to the text file
+            if (RowCount > 0)
+            {
+                foreach (string[] dataRow in _dataRows)
+                {
+                    string line = dataRow[0];
+                    if (dataRow.Length > 1)
+                    {
+                        for (int i = 1; i < dataRow.Length; i++)
+                        {
+                            line += Delimiter + dataRow[i];
+                        }
+                    }
+                    _file.WriteLine(DataRowPrefix + line);
+                }
+            }
+            // Write the End Data List line to the text file
+            _file.WriteLine(EndDataList);
+        }
+
+        /// <summary>
+        /// Open the text file for writing. Throw an exception if the file is already open for writing. Close the
+        /// file if it is open for reading and then open it for writing.
+        /// </summary>
+        private void PrepareFileForSave()
+        {
+            // Close the file if it is open
+            if (FileState == FileState.OPEN)
+            {
+                // Throw an exception if the file is currently open for writing
+                if (FileMode == FileMode.WRITE)
+                {
+                    // Close the file first to save any changes
+                    _file.Close();
+                    string msg = $"Table \"{Name}\" - Unable to save table to file \"{FileName}\" because the file " +
+                        $"was already open for writing.";
+                    throw new DataTableSaveException(msg)
+                    {
+                        TableName = Name,
+                        FileName = FileName,
+                        DirectoryPath = FileDirectoryPath
+                    };
+                }
+                // Close the file
+                _file.Close();
+            }
+            // Open the file for writing
+            try
+            {
+                _file.OpenForWrite(FullFilePath);
+            }
+            catch (Exception e)
+            {
+                // Throw an exception if we are unable to open the text file for writing
+                string msg = $"Table \"{Name}\" - Unable to open file \"{FileName}\" for saving the table.";
+                throw new DataTableSaveException(msg, e)
+                {
+                    TableName = Name,
+                    FileName = FileName,
+                    DirectoryPath = FileDirectoryPath
                 };
             }
         }

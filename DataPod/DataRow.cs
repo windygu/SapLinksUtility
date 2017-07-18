@@ -6,11 +6,15 @@ using System.Threading.Tasks;
 
 namespace Data
 {
+    /// <summary>
+    /// The DataRow object can be used for transferring a single data row between a data table and another object
+    /// </summary>
     public class DataRow
     {
         #region Private Fields
 
-        private Dictionary<string, string> _row;
+        private Dictionary<string, string> _row; // Internally a data row is represented as a Dictionary object
+        private List<string> _keyFields; // A list of field names whose values uniquely identify a single data row
 
         #endregion Private Fields
 
@@ -22,6 +26,7 @@ namespace Data
         public DataRow()
         {
             _row = new Dictionary<string, string>();
+            _keyFields = new List<string>();
         }
 
         /// <summary>
@@ -33,6 +38,7 @@ namespace Data
         public DataRow(int size)
         {
             _row = new Dictionary<string, string>(size);
+            _keyFields = new List<string>(size);
         }
 
         #endregion Public Constructors
@@ -45,24 +51,29 @@ namespace Data
         public int FieldCount => _row.Count();
 
         /// <summary>
-        /// Property that returns a list of the field names contained in the DataRow
+        /// Property that returns the number of key fields for this DataRow
         /// </summary>
-        public List<string> FieldList
+        public int KeyCount => _keyFields.Count();
+
+        /// <summary>
+        /// Property that returns a list of the field names contained in the DataRow as an array of strings
+        /// </summary>
+        public string[] FieldList
         {
             get
             {
-                // Initialize an empty list of field names
-                List<string> _fields = new List<string>(FieldCount);
-                // Get the list of field names as a KeyCollection
-                Dictionary<string, string>.KeyCollection _keys = _row.Keys;
-                // If there is at least one field, then transfer the field names from the
-                // KeyColletion to the List
-                if (_keys.Count > 0)
-                {
-                    foreach (string key in _keys) _fields.Add(key);
-                }
-                // Return the list of field names
-                return _fields;
+                return _row.Keys.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Return the list of key field names as an array of strings
+        /// </summary>
+        public string[] KeyList
+        {
+            get
+            {
+                return _keyFields.ToArray();
             }
         }
 
@@ -86,7 +97,9 @@ namespace Data
                 // Throw an exception if an invalid field name is specified
                 if (!_row.ContainsKey(fieldName))
                 {
-                    // throw exception
+                    string msg = $"Unable to return field value. Field name \"{fieldName}\" doesn't exist in " +
+                        $"this data row.";
+                    throw new DataRowException(msg);
                 }
                 return _row[fieldName];
             }
@@ -95,7 +108,9 @@ namespace Data
                 // Throw an exception if an invalid field name is specified
                 if (!_row.ContainsKey(fieldName))
                 {
-                    // throw exception
+                    string msg = $"Unable to set field value. Field name \"{fieldName}\" doesn't exist in " +
+                        $"this data row.";
+                    throw new DataRowException(msg);
                 }
                 _row[fieldName] = value;
             }
@@ -114,41 +129,24 @@ namespace Data
         /// <param name="fieldValue">
         /// This is the field contents
         /// </param>
-        public void Add(string fieldName, string fieldValue)
+        /// <param name="isKeyField">
+        /// Key field indicator. Defaults to "false". Set "true" for key fields.
+        /// </param>
+        public void AddField(string fieldName, string fieldValue, bool isKeyField = false)
         {
             // Throw an exception if the DataRow already contains the specified field name
             if (_row.ContainsKey(fieldName))
             {
-                // throw exception
+                string msg = $"Field name \"{fieldName}\" has already been added to this data row";
+                throw new DataRowException(msg);
             }
+            // Add the new field to the data row
             _row.Add(fieldName, fieldValue);
-        }
-
-        /// <summary>
-        /// Get the field contents for the specified field name
-        /// </summary>
-        /// <param name="fieldName">
-        /// This is the field name
-        /// </param>
-        /// <returns>
-        /// Returns the contents of the specified field
-        /// </returns>
-        public string GetValue(string fieldName)
-        {
-            // Throw an exception if the specified field name isn't valid
-            if (!_row.ContainsKey(fieldName))
+            // If this is a key field, then add the field name to the list of key fields
+            if (isKeyField)
             {
-                // throw exception
+                _keyFields.Add(fieldName);
             }
-            bool success = _row.TryGetValue(fieldName, out string fieldValue);
-            // Throw an exception if we are unable to retrieve the field.
-            // Note: This exception should never occur since we check for a valid field name earlier.
-            if (!success)
-            {
-                // throw exception
-            }
-            // Return the field contents
-            return fieldValue;
         }
 
         #endregion Public Methods
